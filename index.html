@@ -9,71 +9,73 @@
             --bg: #0f0f0f; --card: #1a1a1a; --text: #ffffff;
             --accent: #007aff; --border: #2c2c2e; --secondary: #8e8e93;
         }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
-        .container { max-width: 450px; margin: auto; background: var(--card); padding: 25px; border-radius: 24px; border: 1px solid var(--border); text-align: center; }
-        h1 { font-size: 22px; margin-bottom: 25px; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: var(--text); }
+        .container { max-width: 450px; margin: auto; background: var(--card); padding: 20px; border-radius: 24px; border: 1px solid var(--border); text-align: center; }
         
-        /* Navigációs sorok */
-        .nav-row { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; background: #262626; padding: 10px 15px; border-radius: 12px; }
-        .nav-btn { background: none; border: none; color: var(--accent); font-size: 20px; cursor: pointer; padding: 0 10px; }
-        .nav-label { font-weight: 500; min-width: 120px; }
+        /* Navigáció */
+        .nav-section { margin-bottom: 20px; }
+        .nav-row { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; background: #262626; padding: 8px 15px; border-radius: 12px; }
+        .nav-btn { background: none; border: none; color: var(--accent); font-size: 18px; cursor: pointer; padding: 5px 10px; }
+        .nav-label { font-weight: 500; font-size: 14px; }
 
-        /* Napok stílusa */
-        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 20px; font-size: 12px; color: var(--secondary); }
-        .date-display { font-size: 28px; font-weight: bold; margin: 20px 0; color: var(--accent); }
+        /* Heti nézet grid */
+        .week-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 10px; margin-top: 15px; }
+        .day-card { 
+            display: flex; align-items: center; justify-content: space-between; 
+            background: #262626; padding: 15px; border-radius: 16px; border: 1px solid var(--border);
+        }
+        .day-info { text-align: left; }
+        .day-name { font-weight: bold; color: var(--accent); font-size: 14px; }
+        .day-date { font-size: 12px; color: var(--secondary); }
         
-        /* Checkbox */
-        .check-container { margin: 20px 0; }
-        input[type="checkbox"] { width: 40px; height: 40px; cursor: pointer; accent-color: var(--accent); }
+        /* Checkbox stílus */
+        input[type="checkbox"] { 
+            width: 28px; height: 28px; cursor: pointer; accent-color: #30d158; 
+            border-radius: 8px; appearance: none; border: 2px solid var(--border); background: #1a1a1a; position: relative;
+        }
+        input[type="checkbox"]:checked { background: #30d158; border-color: #30d158; }
+        input[type="checkbox"]:checked::after { content: '✓'; color: white; position: absolute; left: 6px; top: -2px; font-weight: bold; }
 
-        .main-btn { width: 100%; background: #262626; color: white; padding: 18px; margin: 10px 0; border: 1px solid var(--border); border-radius: 16px; cursor: pointer; font-size: 16px; }
-        .hidden { display: none; }
         .back-btn { background: transparent; color: var(--secondary); margin-top: 20px; border: 1px solid #333; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container" id="main-menu">
-    <h1>Munkaidő</h1>
-    <button class="main-btn" onclick="alert('Kerekítés funkció...')">⏱️ 15p kerekítés</button>
-    <button class="main-btn" onclick="alert('Kerekítés funkció...')">⏳ 30p kerekítés</button>
-    <button class="main-btn" onclick="showPresence()">📅 Jelenlét</button>
+    <h1 style="font-size: 24px;">Munkaidő</h1>
+    <button style="width:100%; padding:15px; margin:10px 0; border-radius:12px; background:#262626; color:white; border:1px solid #333; cursor:pointer;" onclick="showPresence()">📅 Jelenlét (Heti nézet)</button>
 </div>
 
 <div class="container hidden" id="presence-screen">
-    <div class="nav-row">
-        <button class="nav-btn" onclick="changeYear(-1)">❮</button>
-        <span class="nav-label" id="year-val">2026</span>
-        <button class="nav-btn" onclick="changeYear(1)">❯</button>
-    </div>
-    <div class="nav-row">
-        <button class="nav-btn" onclick="changeMonth(-1)">❮</button>
-        <span class="nav-label" id="month-val">Január</span>
-        <button class="nav-btn" onclick="changeMonth(1)">❯</button>
-    </div>
-    <div class="nav-row">
-        <button class="nav-btn" onclick="changeWeek(-1)">❮</button>
-        <span class="nav-label" id="week-val">1. hét</span>
-        <button class="nav-btn" onclick="changeWeek(1)">❯</button>
+    <div class="nav-section">
+        <div class="nav-row">
+            <button class="nav-btn" onclick="changeYear(-1)">❮</button>
+            <span class="nav-label" id="year-val"></span>
+            <button class="nav-btn" onclick="changeYear(1)">❯</button>
+        </div>
+        <div class="nav-row">
+            <button class="nav-btn" onclick="changeMonth(-1)">❮</button>
+            <span class="nav-label" id="month-val"></span>
+            <button class="nav-btn" onclick="changeMonth(1)">❯</button>
+        </div>
+        <div class="nav-row">
+            <button class="nav-btn" onclick="changeWeek(-1)">❮</button>
+            <span class="nav-label" id="week-val"></span>
+            <button class="nav-btn" onclick="changeWeek(1)">❯</button>
+        </div>
     </div>
 
-    <div class="days-grid">
-        <span>H</span><span>K</span><span>Sze</span><span>Cs</span><span>P</span><span>Szo</span><span>V</span>
-    </div>
-    
-    <div class="date-display" id="date-val">2026.01.14</div>
-    
-    <div class="check-container">
-        <input type="checkbox" id="presence-check">
-        <div style="margin-top: 8px; font-size: 14px; color: var(--secondary);">Jelenlét rögzítése</div>
-    </div>
+    <div id="week-days-container" class="week-grid">
+        </div>
 
     <button class="back-btn" onclick="location.reload()">Vissza</button>
 </div>
 
 <script>
-    let d = new Date();
-    const months = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
+    let currentDate = new Date();
+    const dayNames = ["Vasárnap", "Hétfő", "Kedd", "Szerda", "Csütörtök", "Péntek", "Szombat"];
+    const monthNames = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
 
     function showPresence() {
         document.getElementById('main-menu').classList.add('hidden');
@@ -81,23 +83,50 @@
         updateUI();
     }
 
-    function changeYear(n) { d.setFullYear(d.getFullYear() + n); updateUI(); }
-    function changeMonth(n) { d.setMonth(d.getMonth() + n); updateUI(); }
-    function changeWeek(n) { d.setDate(d.getDate() + (n * 7)); updateUI(); }
+    function changeYear(n) { currentDate.setFullYear(currentDate.getFullYear() + n); updateUI(); }
+    function changeMonth(n) { currentDate.setMonth(currentDate.getMonth() + n); updateUI(); }
+    function changeWeek(n) { currentDate.setDate(currentDate.getDate() + (n * 7)); updateUI(); }
 
     function getWeekNumber(date) {
-        let tempDate = new Date(date.getTime());
-        tempDate.setHours(0, 0, 0, 0);
-        tempDate.setDate(tempDate.getDate() + 3 - (tempDate.getDay() + 6) % 7);
-        let week1 = new Date(tempDate.getFullYear(), 0, 4);
-        return 1 + Math.round(((tempDate.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+        let t = new Date(date.getTime());
+        t.setHours(0,0,0,0);
+        t.setDate(t.getDate() + 3 - (t.getDay() + 6) % 7);
+        let w1 = new Date(t.getFullYear(), 0, 4);
+        return 1 + Math.round(((t.getTime() - w1.getTime()) / 86400000 - 3 + (w1.getDay() + 6) % 7) / 7);
     }
 
     function updateUI() {
-        document.getElementById('year-val').innerText = d.getFullYear();
-        document.getElementById('month-val').innerText = months[d.getMonth()];
-        document.getElementById('week-val').innerText = getWeekNumber(d) + ". hét";
-        document.getElementById('date-val').innerText = d.toISOString().split('T')[0].replace(/-/g, '.');
+        document.getElementById('year-val').innerText = currentDate.getFullYear();
+        document.getElementById('month-val').innerText = monthNames[currentDate.getMonth()];
+        document.getElementById('week-val').innerText = getWeekNumber(currentDate) + ". hét";
+
+        const container = document.getElementById('week-days-container');
+        container.innerHTML = '';
+
+        // Hétfő megkeresése
+        let startOfWeek = new Date(currentDate);
+        let day = startOfWeek.getDay();
+        let diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+        startOfWeek.setDate(diff);
+
+        for (let i = 0; i < 7; i++) {
+            let d = new Date(startOfWeek);
+            d.setDate(startOfWeek.getDate() + i);
+            
+            let dateStr = d.toISOString().split('T')[0].replace(/-/g, '.');
+            let dayName = dayNames[d.getDay()];
+
+            let dayCard = document.createElement('div');
+            dayCard.className = 'day-card';
+            dayCard.innerHTML = `
+                <div class="day-info">
+                    <div class="day-name">${dayName}</div>
+                    <div class="day-date">${dateStr}</div>
+                </div>
+                <input type="checkbox" id="check-${dateStr}">
+            `;
+            container.appendChild(dayCard);
+        }
     }
 </script>
 
