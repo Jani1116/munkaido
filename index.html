@@ -3,84 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Munkaidő Napló</title>
+    <title>Munkaidő</title>
     <style>
         :root {
             --bg: #0f0f0f; --card: #1a1a1a; --text: #ffffff;
             --accent: #007aff; --border: #2c2c2e; --secondary: #8e8e93;
         }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
-        .container { max-width: 450px; margin: auto; background: var(--card); padding: 30px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center; border: 1px solid var(--border); }
-        h1 { font-size: 24px; margin-bottom: 30px; }
-        .main-btn { display: flex; align-items: center; justify-content: center; background: #262626; color: white; padding: 20px; margin: 15px auto; border: 1px solid var(--border); border-radius: 16px; font-size: 16px; font-weight: 500; transition: all 0.2s ease; width: 100%; cursor: pointer; }
-        .main-btn:active { transform: scale(0.98); background: #333; }
-        .main-btn i { font-size: 20px; margin-right: 12px; font-style: normal; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
+        .container { max-width: 450px; margin: auto; background: var(--card); padding: 25px; border-radius: 24px; border: 1px solid var(--border); text-align: center; }
+        h1 { font-size: 22px; margin-bottom: 25px; }
+        
+        /* Navigációs sorok */
+        .nav-row { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; background: #262626; padding: 10px 15px; border-radius: 12px; }
+        .nav-btn { background: none; border: none; color: var(--accent); font-size: 20px; cursor: pointer; padding: 0 10px; }
+        .nav-label { font-weight: 500; min-width: 120px; }
+
+        /* Napok stílusa */
+        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 20px; font-size: 12px; color: var(--secondary); }
+        .date-display { font-size: 28px; font-weight: bold; margin: 20px 0; color: var(--accent); }
+        
+        /* Checkbox */
+        .check-container { margin: 20px 0; }
+        input[type="checkbox"] { width: 40px; height: 40px; cursor: pointer; accent-color: var(--accent); }
+
+        .main-btn { width: 100%; background: #262626; color: white; padding: 18px; margin: 10px 0; border: 1px solid var(--border); border-radius: 16px; cursor: pointer; font-size: 16px; }
         .hidden { display: none; }
-        .back-btn { background: transparent; color: var(--secondary); margin-top: 25px; border: 1px solid #333; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; }
-        .time-display { font-size: 32px; font-weight: bold; color: var(--accent); margin: 20px 0; }
-        .info-text { color: var(--secondary); font-size: 14px; margin-bottom: 10px; }
+        .back-btn { background: transparent; color: var(--secondary); margin-top: 20px; border: 1px solid #333; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="container" id="main-menu">
-    <h1>Munkaidő Kezelő</h1>
-    <button class="main-btn" onclick="showWorkTime(15)"><i>⏱️</i> MUNKAIDŐ (15p kerekítés)</button>
-    <button class="main-btn" onclick="showWorkTime(30)"><i>⏳</i> MUNKAIDŐ (30p kerekítés)</button>
-    <button class="main-btn" onclick="showWorkTime(0)"><i>📅</i> MUNKAIDŐ (jelenlét)</button>
+    <h1>Munkaidő</h1>
+    <button class="main-btn" onclick="alert('Kerekítés funkció...')">⏱️ 15p kerekítés</button>
+    <button class="main-btn" onclick="alert('Kerekítés funkció...')">⏳ 30p kerekítés</button>
+    <button class="main-btn" onclick="showPresence()">📅 Jelenlét</button>
 </div>
 
-<div class="container hidden" id="time-screen">
-    <h2 id="screen-title">Munkaidő</h2>
-    <div class="info-text">Aktuális idő:</div>
-    <div class="time-display" id="current-time">00:00:00</div>
-    <div class="info-text">Kerekített érték:</div>
-    <div class="time-display" style="color: #30d158;" id="rounded-time">-</div>
-    <button class="back-btn" onclick="showMenu()">Vissza</button>
+<div class="container hidden" id="presence-screen">
+    <div class="nav-row">
+        <button class="nav-btn" onclick="changeYear(-1)">❮</button>
+        <span class="nav-label" id="year-val">2026</span>
+        <button class="nav-btn" onclick="changeYear(1)">❯</button>
+    </div>
+    <div class="nav-row">
+        <button class="nav-btn" onclick="changeMonth(-1)">❮</button>
+        <span class="nav-label" id="month-val">Január</span>
+        <button class="nav-btn" onclick="changeMonth(1)">❯</button>
+    </div>
+    <div class="nav-row">
+        <button class="nav-btn" onclick="changeWeek(-1)">❮</button>
+        <span class="nav-label" id="week-val">1. hét</span>
+        <button class="nav-btn" onclick="changeWeek(1)">❯</button>
+    </div>
+
+    <div class="days-grid">
+        <span>H</span><span>K</span><span>Sze</span><span>Cs</span><span>P</span><span>Szo</span><span>V</span>
+    </div>
+    
+    <div class="date-display" id="date-val">2026.01.14</div>
+    
+    <div class="check-container">
+        <input type="checkbox" id="presence-check">
+        <div style="margin-top: 8px; font-size: 14px; color: var(--secondary);">Jelenlét rögzítése</div>
+    </div>
+
+    <button class="back-btn" onclick="location.reload()">Vissza</button>
 </div>
 
 <script>
-    let timerInterval;
+    let d = new Date();
+    const months = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
 
-    function showMenu() {
-        document.getElementById('time-screen').classList.add('hidden');
-        document.getElementById('main-menu').classList.remove('hidden');
-        clearInterval(timerInterval);
-    }
-
-    function showWorkTime(rounding) {
+    function showPresence() {
         document.getElementById('main-menu').classList.add('hidden');
-        document.getElementById('time-screen').classList.remove('hidden');
-        
-        const title = document.getElementById('screen-title');
-        if (rounding === 0) title.innerText = "Jelenlét (Pontos)";
-        else title.innerText = `Munkaidő (${rounding}p kerekítés)`;
-
-        updateTime(rounding);
-        timerInterval = setInterval(() => updateTime(rounding), 1000);
+        document.getElementById('presence-screen').classList.remove('hidden');
+        updateUI();
     }
 
-    function updateTime(rounding) {
-        const now = new Date();
-        const h = String(now.getHours()).padStart(2, '0');
-        const m = String(now.getMinutes()).padStart(2, '0');
-        const s = String(now.getSeconds()).padStart(2, '0');
-        
-        document.getElementById('current-time').innerText = `${h}:${m}:${s}`;
+    function changeYear(n) { d.setFullYear(d.getFullYear() + n); updateUI(); }
+    function changeMonth(n) { d.setMonth(d.getMonth() + n); updateUI(); }
+    function changeWeek(n) { d.setDate(d.getDate() + (n * 7)); updateUI(); }
 
-        if (rounding === 0) {
-            document.getElementById('rounded-time').innerText = `${h}:${m}`;
-        } else {
-            document.getElementById('rounded-time').innerText = getRoundedTime(now, rounding);
-        }
+    function getWeekNumber(date) {
+        let tempDate = new Date(date.getTime());
+        tempDate.setHours(0, 0, 0, 0);
+        tempDate.setDate(tempDate.getDate() + 3 - (tempDate.getDay() + 6) % 7);
+        let week1 = new Date(tempDate.getFullYear(), 0, 4);
+        return 1 + Math.round(((tempDate.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
     }
 
-    function getRoundedTime(date, minutes) {
-        let ms = 1000 * 60 * minutes;
-        let rounded = new Date(Math.round(date.getTime() / ms) * ms);
-        let rh = String(rounded.getHours()).padStart(2, '0');
-        let rm = String(rounded.getMinutes()).padStart(2, '0');
-        return `${rh}:${rm}`;
+    function updateUI() {
+        document.getElementById('year-val').innerText = d.getFullYear();
+        document.getElementById('month-val').innerText = months[d.getMonth()];
+        document.getElementById('week-val').innerText = getWeekNumber(d) + ". hét";
+        document.getElementById('date-val').innerText = d.toISOString().split('T')[0].replace(/-/g, '.');
     }
 </script>
 
