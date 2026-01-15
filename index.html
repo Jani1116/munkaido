@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Munkaidő Mentéssel</title>
+    <title>Munkaidő Digitális</title>
     <style>
         :root {
             --bg: #0f0f0f; --card: #1a1a1a; --text: #ffffff;
@@ -13,7 +13,7 @@
         .container { max-width: 500px; margin: auto; background: var(--card); padding: 20px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center; }
         
         .main-btn { display: flex; align-items: center; justify-content: center; background: #262626; color: white; padding: 22px; margin: 15px auto; border: 1px solid var(--border); border-radius: 18px; font-size: 16px; width: 100%; cursor: pointer; transition: 0.2s; border: 1px solid #333; }
-        .main-btn:active { transform: scale(0.97); background: #333; }
+        .main-btn:active { transform: scale(0.97); }
 
         .nav-row { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; background: #262626; padding: 12px 18px; border-radius: 14px; border: 1px solid var(--border); }
         .nav-btn { background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; padding: 5px 15px; }
@@ -38,9 +38,14 @@
         .salary-input { background: #000; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 10px; width: 100%; font-size: 16px; box-sizing: border-box; }
         .result-val { font-size: 26px; font-weight: bold; color: #30d158; }
 
+        /* MODÁLIS STÍLUS */
         #time-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-content { background: #1a1a1a; padding: 25px; border-radius: 24px; border: 1px solid var(--border); width: 85%; max-width: 320px; }
-        .modal-content input { width: 100%; padding: 15px; margin: 8px 0; background: #000; border: 1px solid var(--border); color: white; border-radius: 12px; font-size: 20px; text-align: center; box-sizing: border-box; }
+        .modal-content { background: #1a1a1a; padding: 25px; border-radius: 24px; border: 1px solid var(--border); width: 85%; max-width: 320px; text-align: left; }
+        .modal-content label { color: var(--secondary); font-size: 14px; display: block; margin-top: 15px; }
+        .modal-content input { 
+            width: 100%; padding: 15px; margin: 8px 0; background: #000; border: 1px solid var(--border); 
+            color: white; border-radius: 12px; font-size: 24px; text-align: center; box-sizing: border-box; 
+        }
         .modal-btn { background: var(--accent); color: white; border: none; padding: 16px; width: 100%; border-radius: 14px; margin-top: 15px; font-size: 16px; font-weight: bold; cursor: pointer; }
 
         .hidden { display: none; }
@@ -90,9 +95,14 @@
 
 <div id="time-modal">
     <div class="modal-content">
-        <h3 id="modal-date"></h3>
-        <input type="time" id="start-time">
-        <input type="time" id="end-time">
+        <h3 id="modal-date" style="text-align:center; margin-top:0"></h3>
+        
+        <label>Érkezés (óó:pp)</label>
+        <input type="text" id="start-time" inputmode="numeric" placeholder="08:00" maxlength="5" onkeyup="timeMask(this)">
+        
+        <label>Távozás (óó:pp)</label>
+        <input type="text" id="end-time" inputmode="numeric" placeholder="16:30" maxlength="5" onkeyup="timeMask(this)">
+        
         <button class="modal-btn" onclick="saveTime()">MENTÉS</button>
         <button class="back-btn" style="border:none" onclick="closeModal()">MÉGSE</button>
     </div>
@@ -104,9 +114,18 @@
     let selectedDay = null;
     const months = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
 
-    // ADATOK BETÖLTÉSE
     let workData = JSON.parse(localStorage.getItem('workData')) || {};
     let wages = JSON.parse(localStorage.getItem('wages')) || { 'presence': '0', 'round15': '0', 'round30': '0' };
+
+    // Időformázó maszk (pl. 0800-ból 08:00-at csinál)
+    function timeMask(input) {
+        let val = input.value.replace(/\D/g, "");
+        if (val.length > 2) {
+            input.value = val.substring(0, 2) + ":" + val.substring(2, 4);
+        } else {
+            input.value = val;
+        }
+    }
 
     function openPage(m) {
         mode = m;
@@ -164,17 +183,22 @@
             render();
         } else {
             document.getElementById('modal-date').innerText = `${day}. ${months[d.getMonth()]}`;
+            document.getElementById('start-time').value = "";
+            document.getElementById('end-time').value = "";
             document.getElementById('time-modal').style.display = 'flex';
         }
     }
 
     function saveTime() {
         let s = document.getElementById('start-time').value, e = document.getElementById('end-time').value;
-        if(s && e) {
-            let m = (parseInt(e.split(':')[0])*60 + parseInt(e.split(':')[1])) - (parseInt(s.split(':')[0])*60 + parseInt(s.split(':')[1]));
+        if(s.includes(':') && e.includes(':')) {
+            let sParts = s.split(':'), eParts = e.split(':');
+            let m = (parseInt(eParts[0])*60 + parseInt(eParts[1])) - (parseInt(sParts[0])*60 + parseInt(sParts[1]));
+            
             if(m > 0) {
                 let step = mode === 'round15' ? 15 : 30;
                 let hrs = Math.floor(m / 60), mins = m % 60;
+                // Kerekítés logika
                 if(step === 15) {
                     if(mins >= 53) { hrs++; mins=0; } else if(mins >= 38) mins=45; else if(mins >= 23) mins=30; else if(mins >= 8) mins=15; else mins=0;
                 } else {
