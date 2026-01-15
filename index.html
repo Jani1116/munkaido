@@ -9,113 +9,126 @@
             --bg: #0f0f0f; --card: #1a1a1a; --text: #ffffff;
             --accent: #007aff; --border: #2c2c2e; --secondary: #8e8e93;
         }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: var(--text); }
-        .container { max-width: 650px; margin: auto; background: var(--card); padding: 25px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); }
+        .container { max-width: 500px; margin: auto; background: var(--card); padding: 20px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center; }
         
-        .main-btn { display: flex; align-items: center; justify-content: center; background: #262626; color: white; padding: 20px; margin: 15px auto; border: 1px solid var(--border); border-radius: 16px; font-size: 16px; width: 100%; cursor: pointer; }
-        .nav-row { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; background: #262626; padding: 10px 15px; border-radius: 12px; }
-        .nav-btn { background: none; border: none; color: var(--accent); font-size: 20px; cursor: pointer; }
+        /* Főmenü */
+        .main-btn { display: flex; align-items: center; justify-content: center; background: #262626; color: white; padding: 22px; margin: 15px auto; border: 1px solid var(--border); border-radius: 18px; font-size: 16px; font-weight: 500; width: 100%; cursor: pointer; transition: 0.2s; }
+        .main-btn:active { transform: scale(0.97); background: #333; }
 
-        .content-layout { display: flex; gap: 15px; margin-top: 20px; text-align: left; }
-        .calendar-side { flex: 3; }
-        .calc-side { flex: 2; background: #262626; padding: 15px; border-radius: 16px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; }
+        /* Navigáció */
+        .nav-row { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; background: #262626; padding: 12px 18px; border-radius: 14px; border: 1px solid var(--border); }
+        .nav-btn { background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; padding: 5px 15px; }
 
-        .calendar-grid { display: grid; grid-template-columns: 35px repeat(7, 1fr); gap: 4px; margin-top: 10px; }
-        .grid-header { font-size: 10px; font-weight: bold; color: var(--accent); text-align: center; }
-        .week-num { font-size: 10px; color: var(--secondary); align-self: center; text-align: center; border-right: 1px solid var(--border); }
+        /* Naptár (Teljes szélesség) */
+        .calendar-grid { display: grid; grid-template-columns: 40px repeat(7, 1fr); gap: 6px; margin: 20px 0; width: 100%; }
+        .grid-header { font-size: 11px; font-weight: bold; color: var(--accent); text-align: center; padding-bottom: 8px; text-transform: uppercase; }
+        .week-num { font-size: 10px; color: var(--secondary); align-self: center; text-align: center; font-weight: bold; opacity: 0.7; }
         
-        /* Nap kocka */
         .day-cell { 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: #1f1f1f; min-height: 50px; border-radius: 8px; font-size: 12px; border: 1px solid #2c2c2c; cursor: pointer;
+            background: #1f1f1f; min-height: 65px; border-radius: 12px; font-size: 14px; border: 1px solid #2c2c2c; cursor: pointer; transition: 0.2s;
         }
-        .day-val { font-size: 14px; font-weight: bold; color: #30d158; margin-top: 2px; }
+        .day-cell:active { background: #333; }
+        .day-val { font-size: 13px; font-weight: bold; color: #30d158; margin-top: 4px; }
+
+        /* Összegzés a naptár alatt */
+        .summary-section { 
+            background: #262626; padding: 20px; border-radius: 20px; border: 1px solid var(--border); 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin-top: 10px;
+        }
+        .sum-box { display: flex; flex-direction: column; }
+        .sum-full { grid-column: span 2; border-top: 1px solid #333; pt: 10px; margin-top: 5px; }
+        
+        .calc-label { font-size: 11px; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+        .salary-input { background: #000; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 10px; width: 100%; font-size: 16px; box-sizing: border-box; }
+        .result-val { font-size: 26px; font-weight: bold; color: #30d158; margin-top: 5px; }
 
         /* Modális ablak */
-        #time-modal { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 100;
-        }
-        .modal-content { background: #1a1a1a; padding: 30px; border-radius: 24px; border: 1px solid var(--border); width: 80%; max-width: 300px; text-align: center; }
-        .modal-content input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid var(--border); color: white; border-radius: 8px; font-size: 18px; text-align: center; }
-        .modal-btn { background: var(--accent); color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; margin-top: 10px; font-size: 16px; }
+        #time-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: #1a1a1a; padding: 25px; border-radius: 24px; border: 1px solid var(--border); width: 85%; max-width: 320px; }
+        .modal-content label { display: block; margin-top: 15px; color: var(--secondary); font-size: 13px; }
+        .modal-content input { width: 100%; padding: 15px; margin: 8px 0; background: #000; border: 1px solid var(--border); color: white; border-radius: 12px; font-size: 20px; text-align: center; box-sizing: border-box; }
+        .modal-btn { background: var(--accent); color: white; border: none; padding: 16px; width: 100%; border-radius: 14px; margin-top: 15px; font-size: 16px; font-weight: bold; cursor: pointer; }
 
-        .salary-input { background: #000; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px; width: 100%; text-align: right; box-sizing: border-box; }
-        .result-val { font-size: 24px; font-weight: bold; color: #30d158; }
         .hidden { display: none; }
-        .back-btn { background: transparent; color: var(--secondary); margin-top: 25px; border: 1px solid #333; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; }
+        .back-btn { background: transparent; color: var(--secondary); margin-top: 20px; border: 1px solid #333; width: 100%; padding: 14px; border-radius: 14px; cursor: pointer; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div id="page-main" class="container">
-    <h1>Munkaidő</h1>
-    <button class="main-btn" onclick="openPage('round15')"><i>⏱️</i> Munkaidő (15p kerekítéssel)</button>
-    <button class="main-btn" onclick="openPage('round30')"><i>⏳</i> Munkaidő (30p kerekítéssel)</button>
-    <button class="main-btn" onclick="openPage('presence')"><i>📅</i> Munkaidő (jelenlét)</button>
+    <h1 style="margin-top:0">Munkaidő</h1>
+    <button class="main-btn" onclick="openPage('round15')">⏱️ Munkaidő (15p kerekítéssel)</button>
+    <button class="main-btn" onclick="openPage('round30')">⏳ Munkaidő (30p kerekítéssel)</button>
+    <button class="main-btn" onclick="openPage('presence')">📅 Munkaidő (jelenlét)</button>
 </div>
 
 <div id="page-view" class="container hidden">
-    <h1 id="view-title">Cím</h1>
+    <h2 id="view-title" style="margin-top:0; font-size: 20px;">Cím</h2>
+    
     <div class="nav-row">
         <button class="nav-btn" onclick="changeYear(-1)">❮</button>
-        <span id="year-display"></span>
+        <span id="year-display" style="font-weight: bold; font-size: 18px;"></span>
         <button class="nav-btn" onclick="changeYear(1)">❯</button>
     </div>
     <div class="nav-row">
         <button class="nav-btn" onclick="changeMonth(-1)">❮</button>
-        <span id="month-display"></span>
+        <span id="month-display" style="font-weight: bold; font-size: 18px;"></span>
         <button class="nav-btn" onclick="changeMonth(1)">❯</button>
     </div>
 
-    <div class="content-layout">
-        <div class="calendar-side">
-            <div class="calendar-grid" id="calendar-body"></div>
-        </div>
-        <div class="calc-side">
-            <span id="wage-label" style="font-size: 11px; color: var(--secondary);">BÉR</span>
+    <div class="calendar-grid" id="calendar-body"></div>
+
+    <div class="summary-section">
+        <div class="sum-box">
+            <span id="wage-label" class="calc-label">BÉR</span>
             <input type="text" class="salary-input" id="wage-input" value="0" oninput="formatCurrency(this); calculateTotal();">
-            <span id="total-label" style="font-size: 11px; color: var(--secondary);">ÖSSZES</span>
-            <div id="total-count" style="font-size: 20px; font-weight: bold;">0</div>
-            <span style="font-size: 11px; color: var(--secondary);">HAVI FIZETÉS</span>
+        </div>
+        <div class="sum-box">
+            <span id="total-label" class="calc-label">ÖSSZES</span>
+            <div id="total-count" style="font-size: 24px; font-weight: bold; margin-top:5px">0</div>
+        </div>
+        <div class="sum-box sum-full">
+            <span class="calc-label">VÁRHATÓ HAVI FIZETÉS</span>
             <div class="result-val" id="total-money">0 Ft</div>
         </div>
     </div>
-    <button class="back-btn" onclick="backToMenu()">Vissza</button>
+
+    <button class="back-btn" onclick="backToMenu()">Vissza a főmenübe</button>
 </div>
 
 <div id="time-modal">
     <div class="modal-content">
-        <h3 id="modal-date">Dátum</h3>
-        <label>Érkezés</label>
+        <h3 id="modal-date" style="margin-top:0">Dátum</h3>
+        <label>Munkakezdés (érkezés)</label>
         <input type="time" id="start-time">
-        <label>Távozás</label>
+        <label>Munka vége (távozás)</label>
         <input type="time" id="end-time">
-        <button class="modal-btn" onclick="saveTime()">Mentés</button>
-        <button class="back-btn" onclick="closeModal()">Mégse</button>
+        <button class="modal-btn" onclick="saveTime()">MENTÉS</button>
+        <button class="back-btn" style="border:none" onclick="closeModal()">MÉGSE</button>
     </div>
 </div>
 
 <script>
     let d = new Date();
-    let mode = 'presence'; // round15, round30, presence
+    let mode = 'presence';
     let selectedDay = null;
-    let workData = {}; // Itt tároljuk az órákat nap szerint
+    let workData = {}; 
 
     function openPage(m) {
         mode = m;
         document.getElementById('page-main').classList.add('hidden');
         document.getElementById('page-view').classList.remove('hidden');
         
-        if(mode === 'presence') {
-            document.getElementById('view-title').innerText = "Munkaidő (jelenlét)";
-            document.getElementById('wage-label').innerText = "NAPI FIZETÉS (FT)";
-            document.getElementById('total-label').innerText = "NAPOK SZÁMA";
-        } else {
-            document.getElementById('view-title').innerText = mode === 'round15' ? "Munkaidő (15p)" : "Munkaidő (30p)";
-            document.getElementById('wage-label').innerText = "ÓRABÉR (FT)";
-            document.getElementById('total-label').innerText = "ÖSSZES ÓRA";
-        }
+        const titles = { 'presence': 'Munkaidő (Jelenlét)', 'round15': 'Munkaidő (15p)', 'round30': 'Munkaidő (30p)' };
+        const labels = { 'presence': 'NAPI BÉR (FT)', 'round15': 'ÓRABÉR (FT)', 'round30': 'ÓRABÉR (FT)' };
+        const counts = { 'presence': 'NAPOK', 'round15': 'ÖSSZES ÓRA', 'round30': 'ÖSSZES ÓRA' };
+
+        document.getElementById('view-title').innerText = titles[mode];
+        document.getElementById('wage-label').innerText = labels[mode];
+        document.getElementById('total-label').innerText = counts[mode];
+        
         render();
     }
 
@@ -142,23 +155,20 @@
 
         for (let row = 0; row < 6; row++) {
             if (dateCounter > lastDay.getDate()) break;
-            let weekDate = new Date(d.getFullYear(), d.getMonth(), dateCounter);
-            body.innerHTML += `<div class="week-num">${getWeekNum(weekDate)}</div>`;
+            body.innerHTML += `<div class="week-num">${getWeekNum(new Date(d.getFullYear(), d.getMonth(), dateCounter))}</div>`;
 
             for (let col = 0; col < 7; col++) {
                 if ((row === 0 && col < startShift) || dateCounter > lastDay.getDate()) {
                     body.innerHTML += `<div></div>`;
                 } else {
-                    let dateKey = `${d.getFullYear()}-${d.getMonth()}-${dateCounter}`;
-                    let displayVal = workData[dateKey] || "";
-                    
-                    // Jelenlét módban pipa vagy üres
-                    if(mode === 'presence' && displayVal !== "") displayVal = "✓";
+                    let dateKey = `${mode}-${d.getFullYear()}-${d.getMonth()}-${dateCounter}`;
+                    let val = workData[dateKey] || "";
+                    let display = (mode === 'presence' && val !== "") ? "✓" : val;
 
                     body.innerHTML += `
                         <div class="day-cell" onclick="dayClick(${dateCounter})">
                             ${dateCounter}
-                            <div class="day-val" id="val-${dateKey}">${displayVal}</div>
+                            <div class="day-val">${display}</div>
                         </div>`;
                     dateCounter++;
                 }
@@ -169,12 +179,12 @@
 
     function dayClick(day) {
         selectedDay = day;
-        let dateKey = `${d.getFullYear()}-${d.getMonth()}-${day}`;
+        let dateKey = `${mode}-${d.getFullYear()}-${d.getMonth()}-${day}`;
         if(mode === 'presence') {
             workData[dateKey] = (workData[dateKey] === 1) ? "" : 1;
             render();
         } else {
-            document.getElementById('modal-date').innerText = `${d.getFullYear()}. ${d.getMonth()+1}. ${day}.`;
+            document.getElementById('modal-date').innerText = `${d.getFullYear()}. ${months[d.getMonth()]} ${day}.`;
             document.getElementById('time-modal').style.display = 'flex';
         }
     }
@@ -184,41 +194,35 @@
         let end = document.getElementById('end-time').value;
         if(start && end) {
             let s = start.split(':'), e = end.split(':');
-            let diff = (parseInt(e[0])*60 + parseInt(e[1])) - (parseInt(s[0])*60 + parseInt(s[1]));
-            if(diff > 0) {
+            let m = (parseInt(e[0])*60 + parseInt(e[1])) - (parseInt(s[0])*60 + parseInt(s[1]));
+            if(m > 0) {
                 let step = mode === 'round15' ? 15 : 30;
-                let rounded = roundLogic(diff, step);
-                workData[`${d.getFullYear()}-${d.getMonth()}-${selectedDay}`] = (rounded / 60).toFixed(2);
+                let hrs = Math.floor(m / 60), mins = m % 60;
+                if(step === 15) {
+                    if(mins >= 53) { hrs++; mins=0; } else if(mins >= 38) mins=45; else if(mins >= 23) mins=30; else if(mins >= 8) mins=15; else mins=0;
+                } else {
+                    if(mins >= 46) { hrs++; mins=0; } else if(mins >= 16) mins=30; else mins=0;
+                }
+                workData[`${mode}-${d.getFullYear()}-${d.getMonth()}-${selectedDay}`] = ((hrs * 60 + mins) / 60).toFixed(2);
             }
         }
         closeModal();
         render();
     }
 
-    function roundLogic(m, step) {
-        let hrs = Math.floor(m / 60), mins = m % 60;
-        if(step === 15) {
-            if(mins >= 53) { hrs++; mins=0; } else if(mins >= 38) mins=45; else if(mins >= 23) mins=30; else if(mins >= 8) mins=15; else mins=0;
-        } else {
-            if(mins >= 46) { hrs++; mins=0; } else if(mins >= 16) mins=30; else mins=0;
-        }
-        return hrs * 60 + mins;
-    }
-
     function calculateTotal() {
         let total = 0;
-        for(let key in workData) {
-            if(key.startsWith(`${d.getFullYear()}-${d.getMonth()}-`)) {
-                total += parseFloat(workData[key] || 0);
-            }
-        }
-        document.getElementById('total-count').innerText = mode === 'presence' ? total : total.toFixed(2);
+        let prefix = `${mode}-${d.getFullYear()}-${d.getMonth()}-`;
+        for(let k in workData) { if(k.startsWith(prefix)) total += parseFloat(workData[k] || 0); }
+        
+        document.getElementById('total-count').innerText = (mode === 'presence') ? total : total.toFixed(2);
         let wage = parseInt(document.getElementById('wage-input').value.replace(/\s/g, "")) || 0;
         document.getElementById('total-money').innerText = Math.round(total * wage).toLocaleString('hu-HU') + " Ft";
     }
 
     function closeModal() { document.getElementById('time-modal').style.display = 'none'; }
     function formatCurrency(i) { i.value = i.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+    const months = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
     function getWeekNum(date) {
         let t = new Date(date.valueOf());
         t.setDate(t.getDate() - ((date.getDay() + 6) % 7) + 3);
