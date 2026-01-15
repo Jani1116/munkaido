@@ -24,14 +24,14 @@
         .nav-label { font-weight: 500; font-size: 14px; }
 
         /* Vízszintes napok */
-        .week-container { display: flex; justify-content: space-between; gap: 5px; margin: 25px 0; overflow-x: auto; padding-bottom: 5px; }
-        .day-box { flex: 1; display: flex; flex-direction: column; align-items: center; background: #262626; padding: 10px 5px; border-radius: 12px; border: 1px solid var(--border); min-width: 45px; }
-        .day-name { font-size: 11px; font-weight: bold; color: var(--secondary); margin-bottom: 8px; }
+        .week-container { display: flex; justify-content: space-between; gap: 4px; margin: 25px 0; }
+        .day-box { flex: 1; display: flex; flex-direction: column; align-items: center; background: #262626; padding: 12px 2px; border-radius: 12px; border: 1px solid var(--border); min-width: 0; }
+        .day-name { font-size: 11px; font-weight: bold; color: var(--accent); margin-bottom: 4px; }
+        .day-num { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
         
         /* Checkbox stílus */
-        input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; accent-color: #30d158; }
+        input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: #30d158; margin: 0; }
         
-        .date-display { font-size: 22px; font-weight: bold; margin: 20px 0; color: var(--accent); }
         .hidden { display: none; }
         .back-btn { background: transparent; color: var(--secondary); margin-top: 25px; border: 1px solid #333; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; }
     </style>
@@ -40,8 +40,8 @@
 
 <div class="container" id="main-menu">
     <h1>Munkaidő</h1>
-    <button class="main-btn"><i>⏱️</i> MUNKAIDŐ (15p kerekítés)</button>
-    <button class="main-btn"><i>⏳</i> MUNKAIDŐ (30p kerekítés)</button>
+    <button class="main-btn" onclick="alert('Funkció hamarosan...')"><i>⏱️</i> MUNKAIDŐ (15p kerekítés)</button>
+    <button class="main-btn" onclick="alert('Funkció hamarosan...')"><i>⏳</i> MUNKAIDŐ (30p kerekítés)</button>
     <button class="main-btn" onclick="showPresence()"><i>📅</i> MUNKAIDŐ (jelenlét)</button>
 </div>
 
@@ -64,8 +64,6 @@
 
     <div id="week-days-row" class="week-container">
         </div>
-
-    <div class="date-display" id="date-info"></div>
 
     <button class="back-btn" onclick="showMenu()">Vissza</button>
 </div>
@@ -102,7 +100,6 @@
         document.getElementById('year-val').innerText = currentDate.getFullYear();
         document.getElementById('month-val').innerText = monthNames[currentDate.getMonth()];
         document.getElementById('week-val').innerText = getWeekNumber(currentDate) + ". hét";
-        document.getElementById('date-info').innerText = currentDate.toISOString().split('T')[0].replace(/-/g, '.');
 
         const row = document.getElementById('week-days-row');
         row.innerHTML = '';
@@ -115,13 +112,16 @@
         for (let i = 0; i < 7; i++) {
             let d = new Date(startOfWeek);
             d.setDate(startOfWeek.getDate() + i);
+            
             let dayName = dayShortNames[d.getDay()];
+            let dayNum = d.getDate();
             let dateKey = d.toISOString().split('T')[0];
 
             let dayBox = document.createElement('div');
             dayBox.className = 'day-box';
             dayBox.innerHTML = `
                 <div class="day-name">${dayName}</div>
+                <div class="day-num">${dayNum}</div>
                 <input type="checkbox" id="check-${dateKey}">
             `;
             row.appendChild(dayBox);
