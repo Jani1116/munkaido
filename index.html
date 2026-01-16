@@ -3,32 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Munkaidő Pro - Automata Mentés</title>
+    <title>Munkaidő Pro - Note/Tab Optimized</title>
     <style>
-        /* A stílus marad a korábbi, kedvelt sötét design */
         :root {
             --bg: #000000; --card: #121212; --text: #ffffff;
             --accent: #007aff; --border: #2c2c2e; --secondary: #8e8e93;
             --danger: #ff453a; --warning: #ff9f0a; --success: #30d158;
         }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); -webkit-tap-highlight-color: transparent; }
         .container { max-width: 500px; margin: auto; background: var(--card); padding: 20px; border-radius: 28px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.8); text-align: center; }
+        
         .main-btn { display: flex; align-items: center; justify-content: center; background: #1c1c1e; color: white; padding: 20px; margin: 12px auto; border: 1px solid var(--border); border-radius: 18px; font-size: 16px; width: 100%; cursor: pointer; transition: 0.2s; }
-        .export-btn { background: #262626; color: var(--success); border-color: #30d15844; margin-top: 20px; }
+        .main-btn:active { transform: scale(0.98); background: #2c2c2e; }
+        .export-btn { background: #1e2a1e; color: var(--success); border-color: #30d15844; margin-top: 20px; font-weight: bold; }
+
         .nav-row { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; background: #1c1c1e; padding: 10px 15px; border-radius: 14px; border: 1px solid var(--border); }
         .nav-btn { background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; padding: 5px 15px; }
+
         .calendar-grid { display: grid; grid-template-columns: 40px repeat(7, 1fr); gap: 6px; margin: 15px 0; width: 100%; }
         .grid-header { font-size: 11px; font-weight: bold; color: var(--accent); text-align: center; padding-bottom: 5px; }
         .week-num { font-size: 10px; color: var(--secondary); align-self: center; text-align: center; }
-        .day-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #1c1c1e; min-height: 65px; border-radius: 12px; font-size: 14px; border: 1px solid #2c2c2e; cursor: pointer; }
+        
+        .day-cell { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: #1c1c1e; min-height: 65px; border-radius: 12px; font-size: 14px; border: 1px solid #2c2c2e; cursor: pointer;
+        }
         .day-val { font-size: 12px; font-weight: bold; color: var(--success); margin-top: 4px; }
         .partial-val { color: var(--warning); }
-        .summary-section { background: #1c1c1e; padding: 15px; border-radius: 20px; border: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin-top: 10px; }
+
+        .summary-section { 
+            background: #1c1c1e; padding: 15px; border-radius: 20px; border: 1px solid var(--border); 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin-top: 10px;
+        }
         .sum-full { grid-column: span 2; border-top: 1px solid #2c2c2e; padding-top: 10px; }
         .salary-input { background: #000; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 10px; width: 100%; font-size: 16px; box-sizing: border-box; }
+
         #time-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { background: #1c1c1e; padding: 25px; border-radius: 24px; border: 1px solid var(--border); width: 85%; max-width: 320px; }
         .modal-content input { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid var(--border); color: white; border-radius: 12px; font-size: 24px; text-align: center; box-sizing: border-box; }
+        
         .switch-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; padding: 10px; background: #000; border-radius: 12px; }
         .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -36,8 +49,9 @@
         .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--accent); }
         input:checked + .slider:before { transform: translateX(24px); }
+
         .modal-btn { background: var(--accent); color: white; border: none; padding: 16px; width: 100%; border-radius: 14px; margin-top: 10px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        .delete-btn { color: var(--danger); background: none; border: none; width: 100%; margin-top: 10px; cursor: pointer; }
+        .delete-btn { color: var(--danger); background: none; border: none; width: 100%; margin-top: 15px; cursor: pointer; font-size: 14px; }
         .hidden { display: none; }
     </style>
 </head>
@@ -48,7 +62,7 @@
     <button class="main-btn" onclick="openPage('round15')">⏱️ 15p Kerekítéssel</button>
     <button class="main-btn" onclick="openPage('round30')">⏳ 30p Kerekítéssel</button>
     <button class="main-btn" onclick="openPage('presence')">📅 Jelenlét (✓)</button>
-    <button class="main-btn export-btn" onclick="exportToCSV()">💾 Biztonsági mentés (.csv fájl)</button>
+    <button class="main-btn export-btn" onclick="exportToCSV()">💾 Mentés Google Táblázatokba</button>
 </div>
 
 <div id="page-view" class="container hidden">
@@ -73,7 +87,7 @@
             <div id="total-money" style="font-size: 26px; font-weight: bold; color: var(--success);">0 Ft</div>
         </div>
     </div>
-    <button class="main-btn" style="margin-top:20px" onclick="backToMenu()">Főmenü</button>
+    <button class="main-btn" style="margin-top:20px" onclick="backToMenu()">Vissza a menübe</button>
 </div>
 
 <div id="time-modal">
@@ -83,9 +97,12 @@
         <input type="text" id="start-time" inputmode="numeric" placeholder="08:00" maxlength="5" onkeyup="timeMask(this)">
         <label style="color:var(--secondary); font-size:12px">TÁVOZÁS</label>
         <input type="text" id="end-time" inputmode="numeric" placeholder="16:30" maxlength="5" onkeyup="timeMask(this)">
-        <div class="switch-row"><span style="font-size:14px">Ebédidő (-30p)</span><label class="switch"><input type="checkbox" id="break-toggle"><span class="slider"></span></label></div>
+        <div class="switch-row">
+            <span style="font-size:14px">Ebédidő (-30p)</span>
+            <label class="switch"><input type="checkbox" id="break-toggle"><span class="slider"></span></label>
+        </div>
         <button class="modal-btn" onclick="saveTime()">MENTÉS</button>
-        <button class="delete-btn" onclick="deleteEntry()">Törlés</button>
+        <button class="delete-btn" onclick="deleteEntry()">Adatok törlése</button>
         <button class="main-btn" style="border:none; background:none; font-size:14px" onclick="closeModal()">Mégse</button>
     </div>
 </div>
@@ -96,7 +113,6 @@
     let selectedDay = null;
     const months = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
 
-    // Adatok betöltése
     let workData = JSON.parse(localStorage.getItem('workData')) || {};
     let wages = JSON.parse(localStorage.getItem('wages')) || { 'presence': '0', 'round15': '0', 'round30': '0' };
 
@@ -117,7 +133,7 @@
         mode = m;
         document.getElementById('page-main').classList.add('hidden');
         document.getElementById('page-view').classList.remove('hidden');
-        document.getElementById('view-title').innerText = mode==='presence' ? "Jelenléti ív" : "Munkaidő";
+        document.getElementById('view-title').innerText = mode==='presence' ? "Jelenléti ív" : "Munkaidő napló";
         document.getElementById('wage-input').value = wages[mode] || 0;
         render();
     }
@@ -147,10 +163,7 @@
                     let entry = workData[key];
                     let display = "";
                     if(mode === 'presence') display = entry === 1 ? "✓" : "";
-                    else if (entry) {
-                        if (entry.total > 0) display = entry.total + "ó" + (entry.hasBreak ? '☕' : "");
-                        else if (entry.start) display = '<span class="partial-val">...</span>';
-                    }
+                    else if (entry && entry.total) display = entry.total + "ó" + (entry.hasBreak ? "☕" : "");
                     body.innerHTML += `<div class="day-cell" onclick="dayClick(${dateCounter})">${dateCounter}<div class="day-val">${display}</div></div>`;
                     dateCounter++;
                 }
@@ -180,25 +193,21 @@
         let hasBreak = document.getElementById('break-toggle').checked;
         let key = `${mode}-${d.getFullYear()}-${d.getMonth()}-${selectedDay}`;
 
-        if (!s && !e) delete workData[key];
-        else {
-            let entry = { start: s, end: e, total: 0, hasBreak: hasBreak };
-            if (s.includes(':') && e.includes(':')) {
-                let sP = s.split(':'), eP = e.split(':');
-                let m = (parseInt(eP[0])*60 + parseInt(eP[1])) - (parseInt(sP[0])*60 + parseInt(sP[1]));
-                if (hasBreak) m -= 30;
-                if (m > 0) {
-                    let step = mode === 'round15' ? 15 : 30;
-                    let hrs = Math.floor(m / 60), mins = m % 60;
-                    if(step === 15) {
-                        if(mins >= 53) { hrs++; mins=0; } else if(mins >= 38) mins=45; else if(mins >= 23) mins=30; else if(mins >= 8) mins=15; else mins=0;
-                    } else {
-                        if(mins >= 46) { hrs++; mins=0; } else if(mins >= 16) mins=30; else mins=0;
-                    }
-                    entry.total = ((hrs * 60 + mins) / 60).toFixed(2);
+        if (!s || !e) { delete workData[key]; }
+        else if (s.includes(':') && e.includes(':')) {
+            let sP = s.split(':'), eP = e.split(':');
+            let m = (parseInt(eP[0])*60 + parseInt(eP[1])) - (parseInt(sP[0])*60 + parseInt(sP[1]));
+            if (hasBreak) m -= 30;
+            if (m > 0) {
+                let step = mode === 'round15' ? 15 : 30;
+                let hrs = Math.floor(m / 60), mins = m % 60;
+                if(step === 15) {
+                    if(mins >= 53) { hrs++; mins=0; } else if(mins >= 38) mins=45; else if(mins >= 23) mins=30; else if(mins >= 8) mins=15; else mins=0;
+                } else {
+                    if(mins >= 46) { hrs++; mins=0; } else if(mins >= 16) mins=30; else mins=0;
                 }
+                workData[key] = { start: s, end: e, total: ((hrs * 60 + mins) / 60).toFixed(2), hasBreak: hasBreak };
             }
-            workData[key] = entry;
         }
         saveAll(); closeModal(); render();
     }
@@ -222,21 +231,27 @@
     }
 
     function exportToCSV() {
-        let fileName = prompt("Mi legyen a mentés neve?", "munkaido_mentes");
+        let fileName = prompt("Mi legyen a fájl neve?", "munkaido_export");
         if (!fileName) return;
+        if (!fileName.toLowerCase().endsWith(".csv")) fileName += ".csv";
+
         let csv = "Datum;Mod;Erkezes;Tavozas;Ebedido;Osszes Ora\n";
         for (let key in workData) {
             let p = key.split('-');
             let entry = workData[key];
-            if (p[0] === 'presence' && entry === 1) csv += `${p[1]}.${parseInt(p[2])+1}.${p[3]};Jelenlet;-;-;-;1\n`;
-            else if (p[0] !== 'presence') csv += `${p[1]}.${parseInt(p[2])+1}.${p[3]};${p[0]};${entry.start || '-'};${entry.end || '-'};${entry.hasBreak ? 'Igen' : 'Nem'};${entry.total || 0}\n`;
+            let dateStr = `${p[1]}.${parseInt(p[2])+1}.${p[3]}`;
+            if (p[0] === 'presence' && entry === 1) csv += `${dateStr};Jelenlet;-;-;-;1\n`;
+            else if (p[0] !== 'presence' && entry.total) csv += `${dateStr};${p[0]};${entry.start};${entry.end};${entry.hasBreak ? 'Igen' : 'Nem'};${entry.total}\n`;
         }
-        let blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+
+        let blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8' });
         let url = URL.createObjectURL(blob);
         let link = document.createElement("a");
         link.href = url;
-        link.download = fileName + ".csv";
+        link.download = fileName;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
     }
 
     function closeModal() { document.getElementById('time-modal').style.display = 'none'; }
