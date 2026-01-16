@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Munkaidő Pro - Note/Tab Optimized</title>
+    <title>Munkaidő Napló</title>
     <style>
         :root {
             --bg: #000000; --card: #121212; --text: #ffffff;
@@ -15,7 +15,6 @@
         
         .main-btn { display: flex; align-items: center; justify-content: center; background: #1c1c1e; color: white; padding: 20px; margin: 12px auto; border: 1px solid var(--border); border-radius: 18px; font-size: 16px; width: 100%; cursor: pointer; transition: 0.2s; }
         .main-btn:active { transform: scale(0.98); background: #2c2c2e; }
-        .export-btn { background: #1e2a1e; color: var(--success); border-color: #30d15844; margin-top: 20px; font-weight: bold; }
 
         .nav-row { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; background: #1c1c1e; padding: 10px 15px; border-radius: 14px; border: 1px solid var(--border); }
         .nav-btn { background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; padding: 5px 15px; }
@@ -29,7 +28,6 @@
             background: #1c1c1e; min-height: 65px; border-radius: 12px; font-size: 14px; border: 1px solid #2c2c2e; cursor: pointer;
         }
         .day-val { font-size: 12px; font-weight: bold; color: var(--success); margin-top: 4px; }
-        .partial-val { color: var(--warning); }
 
         .summary-section { 
             background: #1c1c1e; padding: 15px; border-radius: 20px; border: 1px solid var(--border); 
@@ -62,7 +60,6 @@
     <button class="main-btn" onclick="openPage('round15')">⏱️ 15p Kerekítéssel</button>
     <button class="main-btn" onclick="openPage('round30')">⏳ 30p Kerekítéssel</button>
     <button class="main-btn" onclick="openPage('presence')">📅 Jelenlét (✓)</button>
-    <button class="main-btn export-btn" onclick="exportToCSV()">💾 Mentés Google Táblázatokba</button>
 </div>
 
 <div id="page-view" class="container hidden">
@@ -76,7 +73,7 @@
     <div class="summary-section">
         <div class="sum-box">
             <span style="font-size:10px; color:var(--secondary)">ÓRABÉR</span>
-            <input type="text" class="salary-input" id="wage-input" oninput="formatCurrency(this); saveAll();">
+            <input type="text" class="salary-input" id="wage-input" placeholder="0" oninput="formatCurrency(this); saveAll();">
         </div>
         <div class="sum-box">
             <span style="font-size:10px; color:var(--secondary)">ÖSSZES ÓRA</span>
@@ -228,30 +225,6 @@
         document.getElementById('total-count').innerText = mode==='presence' ? total : total.toFixed(2);
         let w = parseInt(document.getElementById('wage-input').value.replace(/\s/g, "")) || 0;
         document.getElementById('total-money').innerText = Math.round(total * w).toLocaleString('hu-HU') + " Ft";
-    }
-
-    function exportToCSV() {
-        let fileName = prompt("Mi legyen a fájl neve?", "munkaido_export");
-        if (!fileName) return;
-        if (!fileName.toLowerCase().endsWith(".csv")) fileName += ".csv";
-
-        let csv = "Datum;Mod;Erkezes;Tavozas;Ebedido;Osszes Ora\n";
-        for (let key in workData) {
-            let p = key.split('-');
-            let entry = workData[key];
-            let dateStr = `${p[1]}.${parseInt(p[2])+1}.${p[3]}`;
-            if (p[0] === 'presence' && entry === 1) csv += `${dateStr};Jelenlet;-;-;-;1\n`;
-            else if (p[0] !== 'presence' && entry.total) csv += `${dateStr};${p[0]};${entry.start};${entry.end};${entry.hasBreak ? 'Igen' : 'Nem'};${entry.total}\n`;
-        }
-
-        let blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8' });
-        let url = URL.createObjectURL(blob);
-        let link = document.createElement("a");
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     }
 
     function closeModal() { document.getElementById('time-modal').style.display = 'none'; }
