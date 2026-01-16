@@ -8,11 +8,12 @@
         :root {
             --bg: #0f0f0f; --card: #1a1a1a; --text: #ffffff;
             --accent: #007aff; --border: #2c2c2e; --secondary: #8e8e93;
+            --danger: #ff3b30;
         }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); }
         .container { max-width: 500px; margin: auto; background: var(--card); padding: 20px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.6); text-align: center; }
         
-        .main-btn { display: flex; align-items: center; justify-content: center; background: #262626; color: white; padding: 22px; margin: 15px auto; border: 1px solid var(--border); border-radius: 18px; font-size: 16px; width: 100%; cursor: pointer; transition: 0.2s; border: 1px solid #333; }
+        .main-btn { display: flex; align-items: center; justify-content: center; background: #262626; color: white; padding: 22px; margin: 15px auto; border: 1px solid var(--border); border-radius: 18px; font-size: 16px; width: 100%; cursor: pointer; transition: 0.2s; }
         .main-btn:active { transform: scale(0.97); }
 
         .nav-row { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; background: #262626; padding: 12px 18px; border-radius: 14px; border: 1px solid var(--border); }
@@ -38,7 +39,6 @@
         .salary-input { background: #000; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 10px; width: 100%; font-size: 16px; box-sizing: border-box; }
         .result-val { font-size: 26px; font-weight: bold; color: #30d158; }
 
-        /* MODÁLIS STÍLUS */
         #time-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { background: #1a1a1a; padding: 25px; border-radius: 24px; border: 1px solid var(--border); width: 85%; max-width: 320px; text-align: left; }
         .modal-content label { color: var(--secondary); font-size: 14px; display: block; margin-top: 15px; }
@@ -47,6 +47,7 @@
             color: white; border-radius: 12px; font-size: 24px; text-align: center; box-sizing: border-box; 
         }
         .modal-btn { background: var(--accent); color: white; border: none; padding: 16px; width: 100%; border-radius: 14px; margin-top: 15px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .delete-btn { background: #3a3a3c; color: var(--danger); border: none; padding: 12px; width: 100%; border-radius: 14px; margin-top: 10px; font-size: 14px; cursor: pointer; }
 
         .hidden { display: none; }
         .back-btn { background: transparent; color: var(--secondary); margin-top: 20px; border: 1px solid #333; width: 100%; padding: 14px; border-radius: 14px; cursor: pointer; }
@@ -82,7 +83,7 @@
             <input type="text" class="salary-input" id="wage-input" value="0" oninput="formatCurrency(this); saveWage(); calculateTotal();">
         </div>
         <div class="sum-box">
-            <span id="total-label" style="font-size:11px; color:var(--secondary)">ÖSSZES</span>
+            <span id="total-label" style="font-size:11px; color:var(--secondary)">ÖSSZES ÓRA</span>
             <div id="total-count" style="font-size: 24px; font-weight: bold;">0</div>
         </div>
         <div class="sum-box sum-full">
@@ -104,6 +105,7 @@
         <input type="text" id="end-time" inputmode="numeric" placeholder="16:30" maxlength="5" onkeyup="timeMask(this)">
         
         <button class="modal-btn" onclick="saveTime()">MENTÉS</button>
+        <button class="delete-btn" onclick="deleteEntry()">TÖRLÉS</button>
         <button class="back-btn" style="border:none" onclick="closeModal()">MÉGSE</button>
     </div>
 </div>
@@ -117,7 +119,6 @@
     let workData = JSON.parse(localStorage.getItem('workData')) || {};
     let wages = JSON.parse(localStorage.getItem('wages')) || { 'presence': '0', 'round15': '0', 'round30': '0' };
 
-    // Időformázó maszk (pl. 0800-ból 08:00-at csinál)
     function timeMask(input) {
         let val = input.value.replace(/\D/g, "");
         if (val.length > 2) {
@@ -132,7 +133,7 @@
         document.getElementById('page-main').classList.add('hidden');
         document.getElementById('page-view').classList.remove('hidden');
         document.getElementById('view-title').innerText = mode==='presence' ? "Jelenlét" : (mode==='round15' ? "15p Kerekítés" : "30p Kerekítés");
-        document.getElementById('wage-input').value = wages[mode];
+        document.getElementById('wage-input').value = wages[mode] || 0;
         render();
     }
 
@@ -161,11 +162,12 @@
             if (dateCounter > lastDay.getDate()) break;
             body.innerHTML += `<div class="week-num">${getWeekNum(new Date(d.getFullYear(), d.getMonth(), dateCounter))}</div>`;
             for (let col = 0; col < 7; col++) {
-                if ((row === 0 && col < startShift) || dateCounter > lastDay.getDate()) body.innerHTML += `<div></div>`;
-                else {
+                if ((row === 0 && col < startShift) || dateCounter > lastDay.getDate()) {
+                    body.innerHTML += `<div></div>`;
+                } else {
                     let key = `${mode}-${d.getFullYear()}-${d.getMonth()}-${dateCounter}`;
                     let val = workData[key] || "";
-                    let display = (mode === 'presence' && val === 1) ? "✓" : val;
+                    let display = (mode === 'presence' && val === 1) ? "✓" : (val ? val + "ó" : "");
                     body.innerHTML += `<div class="day-cell" onclick="dayClick(${dateCounter})">${dateCounter}<div class="day-val">${display}</div></div>`;
                     dateCounter++;
                 }
@@ -191,6 +193,8 @@
 
     function saveTime() {
         let s = document.getElementById('start-time').value, e = document.getElementById('end-time').value;
+        let key = `${mode}-${d.getFullYear()}-${d.getMonth()}-${selectedDay}`;
+
         if(s.includes(':') && e.includes(':')) {
             let sParts = s.split(':'), eParts = e.split(':');
             let m = (parseInt(eParts[0])*60 + parseInt(eParts[1])) - (parseInt(sParts[0])*60 + parseInt(sParts[1]));
@@ -198,16 +202,22 @@
             if(m > 0) {
                 let step = mode === 'round15' ? 15 : 30;
                 let hrs = Math.floor(m / 60), mins = m % 60;
-                // Kerekítés logika
                 if(step === 15) {
                     if(mins >= 53) { hrs++; mins=0; } else if(mins >= 38) mins=45; else if(mins >= 23) mins=30; else if(mins >= 8) mins=15; else mins=0;
                 } else {
                     if(mins >= 46) { hrs++; mins=0; } else if(mins >= 16) mins=30; else mins=0;
                 }
-                workData[`${mode}-${d.getFullYear()}-${d.getMonth()}-${selectedDay}`] = ((hrs * 60 + mins) / 60).toFixed(2);
+                workData[key] = ((hrs * 60 + mins) / 60).toFixed(2);
                 localStorage.setItem('workData', JSON.stringify(workData));
             }
         }
+        closeModal(); render();
+    }
+
+    function deleteEntry() {
+        let key = `${mode}-${d.getFullYear()}-${d.getMonth()}-${selectedDay}`;
+        delete workData[key];
+        localStorage.setItem('workData', JSON.stringify(workData));
         closeModal(); render();
     }
 
@@ -215,7 +225,7 @@
         let total = 0, prefix = `${mode}-${d.getFullYear()}-${d.getMonth()}-`;
         for(let k in workData) { if(k.startsWith(prefix)) total += parseFloat(workData[k] || 0); }
         document.getElementById('total-count').innerText = mode==='presence' ? total : total.toFixed(2);
-        let w = parseInt(wages[mode].replace(/\s/g, "")) || 0;
+        let w = parseInt(document.getElementById('wage-input').value.replace(/\s/g, "")) || 0;
         document.getElementById('total-money').innerText = Math.round(total * w).toLocaleString('hu-HU') + " Ft";
     }
 
