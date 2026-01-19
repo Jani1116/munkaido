@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő PRO - Admin & Sync</title>
+    <title>Munkaidő PRO - Sync & Admin</title>
     <style>
         :root {
             --bg: #000000; --card: #1c1c1e; --text: #ffffff;
@@ -33,6 +33,7 @@
 
         .summary-section { background: var(--card); padding: 15px; border-radius: 20px; border: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; }
         .sum-full { grid-column: span 2; border-top: 1px solid var(--border); padding-top: 10px; }
+        .salary-input { background: #000; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 10px; width: 100%; font-size: 16px; box-sizing: border-box; }
 
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { background: var(--card); padding: 25px; border-radius: 24px; width: 85%; max-width: 320px; border: 1px solid var(--border); }
@@ -76,7 +77,7 @@
     <div class="summary-section">
         <div class="sum-box">
             <span id="label-wage" style="font-size:10px; color:var(--secondary)">ÓRABÉR</span>
-            <input type="text" id="wage-input" style="margin-top:5px; padding:8px" placeholder="0" oninput="formatCurrency(this); saveWages();">
+            <input type="text" id="wage-input" class="salary-input" placeholder="0 Ft" oninput="formatCurrency(this); saveWages();">
         </div>
         <div class="sum-box">
             <span id="label-total" style="font-size:10px; color:var(--secondary)">ÓRÁK</span>
@@ -124,7 +125,11 @@
     let mode = 'presence', selectedDay = null;
     const months = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
 
-    window.addEventListener('popstate', () => { if (!document.getElementById('page-main').classList.contains('hidden')) return; backToMenu(true); });
+    // Samsung vissza gomb kezelése
+    window.addEventListener('popstate', () => { 
+        if (!document.getElementById('page-main').classList.contains('hidden')) return; 
+        backToMenu(true); 
+    });
 
     async function handleLogin() {
         const u = document.getElementById('login-user').value.trim();
@@ -146,7 +151,7 @@
     async function initApp() {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('page-main').classList.remove('hidden');
-        document.getElementById('user-info').innerText = `Felhasználó: ${currentUser.name.toUpperCase()}`;
+        document.getElementById('user-info').innerText = `FELHASZNÁLÓ: ${currentUser.name.toUpperCase()}`;
         if(currentUser.isAdmin) document.getElementById('admin-panel-btn').style.display = 'flex';
         await loadRemoteData();
     }
@@ -164,27 +169,36 @@
         await fetch(`${DB_URL}work_data/${currentUser.name}.json`, { method: 'PUT', body: JSON.stringify({ entries: workData, wages: wages }) });
     }
 
-    async function addUser() {
-        const name = document.getElementById('new-user-name').value.trim();
-        const pass = document.getElementById('new-user-pass').value.trim();
-        if(!name || !pass) return;
-        showLoading(true);
-        await fetch(`${DB_URL}users_auth/${name}.json`, { method: 'PUT', body: JSON.stringify(pass) });
-        alert(name + " létrehozva!");
-        closeModal('admin-modal');
-        showLoading(false);
-    }
-
     function openPage(m) {
         mode = m;
         history.pushState({page: 'view'}, '');
         document.getElementById('page-main').classList.add('hidden');
         document.getElementById('page-view').classList.remove('hidden');
+        
         document.getElementById('label-total').innerText = mode === 'presence' ? "NAPOK" : "ÓRÁK";
         document.getElementById('label-wage').innerText = mode === 'presence' ? "NAPI FIZETÉS" : "ÓRABÉR";
         document.getElementById('view-title').innerText = mode === 'presence' ? "Jelenléti ív" : "Munkaidő napló";
-        document.getElementById('wage-input').value = wages[mode] || 0;
+        
+        const val = wages[mode] || "0";
+        const input = document.getElementById('wage-input');
+        input.value = val === "0" ? "" : parseInt(val).toLocaleString('hu-HU') + " Ft";
+        
         render();
+    }
+
+    function formatCurrency(i) { 
+        let v = i.value.replace(/\D/g, ""); 
+        if(!v) { i.value = ""; return; }
+        i.value = parseInt(v).toLocaleString('hu-HU') + " Ft";
+        let pos = i.value.length - 3;
+        i.setSelectionRange(pos, pos);
+    }
+
+    async function saveWages() { 
+        let v = document.getElementById('wage-input').value.replace(/\D/g, "");
+        wages[mode] = v || "0"; 
+        await syncData(); 
+        calculateTotal(); 
     }
 
     async function saveTime() {
@@ -236,19 +250,41 @@
         let total = 0, prefix = `${mode}_${d.getFullYear()}_${d.getMonth()}_`;
         for(let k in workData) if(k.startsWith(prefix) && workData[k]) total += (mode==='presence' ? 1 : parseFloat(workData[k].total));
         document.getElementById('total-count').innerText = mode==='presence' ? total : total.toFixed(2);
-        let w = parseInt(document.getElementById('wage-input').value.replace(/\s/g, "")) || 0;
+        let w = parseInt(document.getElementById('wage-input').value.replace(/\D/g, "")) || 0;
         document.getElementById('total-money').innerText = Math.round(total * w).toLocaleString('hu-HU') + " Ft";
     }
 
-    function dayClick(day) { selectedDay = day; if(mode==='presence') { let key=`${mode}_${d.getFullYear()}_${d.getMonth()}_${day}`; workData[key]=workData[key]?null:1; syncData().then(render); } else { document.getElementById('time-modal').style.display='flex'; } }
+    function dayClick(day) { 
+        selectedDay = day; 
+        if(mode==='presence') { 
+            let key=`${mode}_${d.getFullYear()}_${d.getMonth()}_${day}`; 
+            workData[key]=workData[key]?null:1; syncData().then(render); 
+        } else { 
+            let entry = workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${day}`] || {};
+            document.getElementById('modal-date').innerText = `${months[d.getMonth()]} ${day}.`;
+            document.getElementById('start-time').value = entry.start || "";
+            document.getElementById('end-time').value = entry.end || "";
+            document.getElementById('break-toggle').checked = entry.hasBreak || false;
+            document.getElementById('time-modal').style.display='flex'; 
+        } 
+    }
+
     async function deleteEntry() { delete workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${selectedDay}`]; await syncData(); closeModal('time-modal'); render(); }
-    async function saveWages() { wages[mode] = document.getElementById('wage-input').value; await syncData(); calculateTotal(); }
+    async function addUser() {
+        const name = document.getElementById('new-user-name').value.trim();
+        const pass = document.getElementById('new-user-pass').value.trim();
+        if(!name || !pass) return;
+        showLoading(true);
+        await fetch(`${DB_URL}users_auth/${name}.json`, { method: 'PUT', body: JSON.stringify(pass) });
+        alert(name + " létrehozva!");
+        closeModal('admin-modal');
+        showLoading(false);
+    }
     function openAdmin() { document.getElementById('admin-modal').style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     function backToMenu(pop = false) { document.getElementById('page-view').classList.add('hidden'); document.getElementById('page-main').classList.remove('hidden'); if(!pop) history.back(); }
     function logout() { localStorage.removeItem('work_session'); location.reload(); }
     function showLoading(s) { document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; }
-    function formatCurrency(i) { i.value = i.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
     function timeMask(i) { let v = i.value.replace(/\D/g, ""); if (v.length > 2) i.value = v.substring(0, 2) + ":" + v.substring(2, 4); else i.value = v; }
     function changeMonth(n) { d.setMonth(d.getMonth() + n); render(); }
     function getWeekNum(date) { let t = new Date(date.valueOf()); t.setDate(t.getDate() - ((date.getDay() + 6) % 7) + 3); let f = t.valueOf(); t.setMonth(0, 1); if (t.getDay() !== 4) t.setMonth(0, 1 + ((4 - t.getDay()) + 7) % 7); return 1 + Math.ceil((f - t) / 604800000); }
