@@ -72,11 +72,11 @@
     <div class="calendar-grid" id="calendar-body"></div>
     <div class="summary-section">
         <div class="sum-box">
-            <span style="font-size:10px; color:var(--secondary)">ÓRABÉR</span>
+            <span id="label-wage" style="font-size:10px; color:var(--secondary)">ÓRABÉR</span>
             <input type="text" class="salary-input" id="wage-input" placeholder="0" oninput="formatCurrency(this); saveAll();">
         </div>
         <div class="sum-box">
-            <span style="font-size:10px; color:var(--secondary)">ÖSSZES ÓRA</span>
+            <span id="label-total" style="font-size:10px; color:var(--secondary)">ÖSSZES ÓRA</span>
             <div id="total-count" style="font-size: 22px; font-weight: bold; margin-top:8px">0</div>
         </div>
         <div class="sum-box sum-full">
@@ -113,6 +113,13 @@
     let workData = JSON.parse(localStorage.getItem('workData')) || {};
     let wages = JSON.parse(localStorage.getItem('wages')) || { 'presence': '0', 'round15': '0', 'round30': '0' };
 
+    // Vissza gomb kezelése (Android/Böngésző)
+    window.addEventListener('popstate', function(event) {
+        if (document.getElementById('page-main').classList.contains('hidden')) {
+            backToMenu(true);
+        }
+    });
+
     function saveAll() {
         wages[mode] = document.getElementById('wage-input').value;
         localStorage.setItem('workData', JSON.stringify(workData));
@@ -128,16 +135,31 @@
 
     function openPage(m) {
         mode = m;
+        // History állapot hozzáadása, hogy a vissza gomb ne lépjen ki
+        history.pushState({page: 'view'}, '');
+        
         document.getElementById('page-main').classList.add('hidden');
         document.getElementById('page-view').classList.remove('hidden');
-        document.getElementById('view-title').innerText = mode==='presence' ? "Jelenléti ív" : "Munkaidő napló";
+        
+        // Dinamikus feliratok
+        if(mode === 'presence') {
+            document.getElementById('view-title').innerText = "Jelenléti ív";
+            document.getElementById('label-wage').innerText = "NAPI FIZETÉS";
+            document.getElementById('label-total').innerText = "LEDOLGOZOTT NAPOK";
+        } else {
+            document.getElementById('view-title').innerText = "Munkaidő napló";
+            document.getElementById('label-wage').innerText = "ÓRABÉR";
+            document.getElementById('label-total').innerText = "ÖSSZES ÓRA";
+        }
+        
         document.getElementById('wage-input').value = wages[mode] || 0;
         render();
     }
 
-    function backToMenu() {
+    function backToMenu(fromPopState = false) {
         document.getElementById('page-view').classList.add('hidden');
         document.getElementById('page-main').classList.remove('hidden');
+        if(!fromPopState) history.back();
     }
 
     function render() {
