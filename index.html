@@ -13,16 +13,24 @@
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); -webkit-tap-highlight-color: transparent; }
         .container { max-width: 500px; margin: auto; background: #121212; padding: 20px; border-radius: 28px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.8); text-align: center; }
         
+        /* Samsung Tab S7 FE - Nagyobb képernyő optimalizálás */
+        @media (min-width: 700px) {
+            .container { max-width: 650px; padding: 40px; }
+            .calendar-grid { gap: 10px; }
+            .day-cell { min-height: 90px; font-size: 18px; }
+        }
+
         #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
         input { width: 100%; background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 12px; color: #fff; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
+        input:focus { outline: 2px solid var(--accent); border-color: transparent; }
         
-        .main-btn { display: flex; align-items: center; justify-content: center; background: var(--card); color: white; padding: 18px; margin: 10px auto; border: 1px solid var(--border); border-radius: 16px; font-size: 16px; width: 100%; cursor: pointer; transition: 0.2s; font-weight: bold; }
-        .main-btn:active { transform: scale(0.98); background: #2c2c2e; }
+        .main-btn { display: flex; align-items: center; justify-content: center; background: var(--card); color: white; padding: 18px; margin: 12px auto; border: 1px solid var(--border); border-radius: 16px; font-size: 16px; width: 100%; cursor: pointer; transition: 0.2s; font-weight: bold; }
+        .main-btn:active { transform: scale(0.97); background: #2c2c2e; }
         .accent-btn { background: var(--accent); border: none; }
         .admin-btn { background: var(--admin); border: none; display: none; }
 
         .nav-row { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; background: var(--card); padding: 10px 15px; border-radius: 14px; border: 1px solid var(--border); }
-        .nav-btn { background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; }
+        .nav-btn { background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; padding: 5px 10px; }
 
         .calendar-grid { display: grid; grid-template-columns: 40px repeat(7, 1fr); gap: 6px; margin: 15px 0; }
         .grid-header { font-size: 11px; font-weight: bold; color: var(--accent); text-align: center; }
@@ -70,6 +78,7 @@
     <div class="nav-row">
         <button class="nav-btn" onclick="changeMonth(-1)">❮</button>
         <span id="month-display" style="font-weight:bold"></span>
+        <button class="nav-btn" onclick="exportToExcel()" title="Mentés Excelbe">💾</button>
         <button class="nav-btn" onclick="changeMonth(1)">❯</button>
     </div>
     <div class="calendar-grid" id="calendar-body"></div>
@@ -125,7 +134,6 @@
     let mode = 'presence', selectedDay = null;
     const months = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
 
-    // Samsung vissza gomb kezelése
     window.addEventListener('popstate', () => { 
         if (!document.getElementById('page-main').classList.contains('hidden')) return; 
         backToMenu(true); 
@@ -174,15 +182,12 @@
         history.pushState({page: 'view'}, '');
         document.getElementById('page-main').classList.add('hidden');
         document.getElementById('page-view').classList.remove('hidden');
-        
         document.getElementById('label-total').innerText = mode === 'presence' ? "NAPOK" : "ÓRÁK";
         document.getElementById('label-wage').innerText = mode === 'presence' ? "NAPI FIZETÉS" : "ÓRABÉR";
         document.getElementById('view-title').innerText = mode === 'presence' ? "Jelenléti ív" : "Munkaidő napló";
-        
         const val = wages[mode] || "0";
         const input = document.getElementById('wage-input');
         input.value = val === "0" ? "" : parseInt(val).toLocaleString('hu-HU') + " Ft";
-        
         render();
     }
 
@@ -269,6 +274,38 @@
         } 
     }
 
+    function exportToExcel() {
+        const year = d.getFullYear();
+        const month = d.getMonth();
+        const monthName = months[month];
+        let csvContent = "\uFEFFDátum;Érkezés;Távozás;Ebéd;Óra/Jelenlét\n";
+        let lastDay = new Date(year, month + 1, 0).getDate();
+        let totalValue = 0;
+
+        for (let day = 1; day <= lastDay; day++) {
+            let key = `${mode}_${year}_${month}_${day}`;
+            let entry = workData[key];
+            let rowDate = `${year}.${month + 1}.${day}.`;
+            if (entry) {
+                if (mode === 'presence') { csvContent += `${rowDate};-;-;-;Jelen (1)\n`; totalValue += 1; } 
+                else {
+                    let breakText = entry.hasBreak ? "30p" : "0";
+                    csvContent += `${rowDate};${entry.start};${entry.end};${breakText};${entry.total} óra\n`;
+                    totalValue += parseFloat(entry.total);
+                }
+            } else { csvContent += `${rowDate};-;-;-;-\n`; }
+        }
+        let wage = parseInt(wages[mode]) || 0;
+        let label = mode === 'presence' ? "Összes nap" : "Összes óra";
+        csvContent += `\n${label};;;;${totalValue}\nEgységnyi bér;;;;${wage} Ft\nVárható fizetés;;;;${Math.round(totalValue * wage)} Ft\n`;
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.body.appendChild(document.createElement("a"));
+        link.href = window.URL.createObjectURL(blob);
+        link.setAttribute("download", `Munkaido_${currentUser.name}_${year}_${monthName}.csv`);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     async function deleteEntry() { delete workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${selectedDay}`]; await syncData(); closeModal('time-modal'); render(); }
     async function addUser() {
         const name = document.getElementById('new-user-name').value.trim();
@@ -276,16 +313,14 @@
         if(!name || !pass) return;
         showLoading(true);
         await fetch(`${DB_URL}users_auth/${name}.json`, { method: 'PUT', body: JSON.stringify(pass) });
-        alert(name + " létrehozva!");
-        closeModal('admin-modal');
-        showLoading(false);
+        alert(name + " létrehozva!"); closeModal('admin-modal'); showLoading(false);
     }
     function openAdmin() { document.getElementById('admin-modal').style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     function backToMenu(pop = false) { document.getElementById('page-view').classList.add('hidden'); document.getElementById('page-main').classList.remove('hidden'); if(!pop) history.back(); }
     function logout() { localStorage.removeItem('work_session'); location.reload(); }
     function showLoading(s) { document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; }
-    function timeMask(i) { let v = i.value.replace(/\D/g, ""); if (v.length > 2) i.value = v.substring(0, 2) + ":" + v.substring(2, 4); else i.value = v; }
+    function timeMask(i) { let v = i.value.replace(/\D/g, ""); if (v.length >= 3) i.value = v.substring(0, 2) + ":" + v.substring(2, 4); else i.value = v; }
     function changeMonth(n) { d.setMonth(d.getMonth() + n); render(); }
     function getWeekNum(date) { let t = new Date(date.valueOf()); t.setDate(t.getDate() - ((date.getDay() + 6) % 7) + 3); let f = t.valueOf(); t.setMonth(0, 1); if (t.getDay() !== 4) t.setMonth(0, 1 + ((4 - t.getDay()) + 7) % 7); return 1 + Math.ceil((f - t) / 604800000); }
     if(currentUser) initApp();
