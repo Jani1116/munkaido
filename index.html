@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő PRO - Sync & Admin</title>
+    <title>Munkaidő PRO</title>
     <style>
         :root {
             --bg: #000000; --card: #1c1c1e; --text: #ffffff;
@@ -21,10 +21,8 @@
 
         #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
         input { width: 100%; background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 12px; color: #fff; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
-        input:focus { outline: 2px solid var(--accent); border-color: transparent; }
         
         .main-btn { display: flex; align-items: center; justify-content: center; background: var(--card); color: white; padding: 18px; margin: 12px auto; border: 1px solid var(--border); border-radius: 16px; font-size: 16px; width: 100%; cursor: pointer; transition: 0.2s; font-weight: bold; }
-        .main-btn:active { transform: scale(0.97); background: #2c2c2e; }
         .accent-btn { background: var(--accent); border: none; }
         .admin-btn { background: var(--admin); border: none; display: none; }
 
@@ -54,7 +52,7 @@
 <div id="loading-overlay">Szinkronizálás...</div>
 
 <div id="login-screen">
-    <h2 style="margin-bottom:20px">Munkaidő Belépés</h2>
+    <h2>Munkaidő Belépés</h2>
     <div style="width:100%; max-width:300px">
         <input type="text" id="login-user" placeholder="Felhasználónév">
         <input type="password" id="login-pass" placeholder="Jelszó">
@@ -64,7 +62,7 @@
 
 <div id="page-main" class="container hidden">
     <div id="user-info" style="font-size:12px; color:var(--secondary); margin-bottom:10px"></div>
-    <h1 style="margin-bottom:25px">Munkaidő</h1>
+    <h1>Munkaidő</h1>
     <button class="main-btn" onclick="openPage('round15')">⏱️ 15p Kerekítés</button>
     <button class="main-btn" onclick="openPage('presence')">📅 Jelenlét (✓)</button>
     <button id="admin-panel-btn" class="main-btn admin-btn" onclick="openAdmin()">+ ÚJ FELHASZNÁLÓ</button>
@@ -72,7 +70,7 @@
 </div>
 
 <div id="page-view" class="container hidden">
-    <h2 id="view-title" style="margin:0 0 15px 0"></h2>
+    <h2 id="view-title"></h2>
     <div class="nav-row">
         <button class="nav-btn" onclick="changeMonth(-1)">❮</button>
         <span id="month-display" style="font-weight:bold"></span>
@@ -130,7 +128,7 @@
     let wages = { 'presence': '0', 'round15': '0' };
     let d = new Date();
     let mode = 'presence', selectedDay = null;
-    const months = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
+    const months = ["januar", "februar", "marcius", "aprilis", "majus", "junius", "julius", "augusztus", "szeptember", "oktober", "november", "december"];
 
     window.addEventListener('popstate', () => { 
         if (!document.getElementById('page-main').classList.contains('hidden')) return; 
@@ -238,7 +236,7 @@
     function render() {
         document.getElementById('month-display').innerText = `${d.getFullYear()}. ${months[d.getMonth()]}`;
         const body = document.getElementById('calendar-body');
-        body.innerHTML = '<div class="grid-header"></div>' + ["H", "K", "Sze", "Cs", "P", "Szo", "V"].map(h => `<div class="grid-header">${h}</div>`).join('');
+        body.innerHTML = '<div class="grid-header"></div>' + ["H", "K", "Sze", "Cs", "P", "Szo", "V"].map(h => `<div class="grid-header">${h}</tr>`).join('');
         let firstDay = new Date(d.getFullYear(), d.getMonth(), 1);
         let lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
         let startShift = (firstDay.getDay() + 6) % 7;
@@ -288,24 +286,18 @@
         const monthName = months[month];
         const dayNames = ["H", "K", "Sze", "Cs", "P", "Szo", "V"];
         
-        // HTML alapú Excel formázás (szín és oszlopszélesség miatt)
-        let html = `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        let template = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
         <head><meta charset="utf-8"><style>
-            td { text-align: center; vertical-align: middle; border: 0.5pt solid #000000; font-size: 12pt; }
-            .header { font-size: 14pt; font-weight: bold; }
+            td { text-align: center; vertical-align: middle; border: 0.5pt solid #000000; font-family: Arial; font-size: 12pt; width: 68pt; height: 25pt; }
+            .header { font-size: 14pt; font-weight: bold; border: none; }
             .present { background-color: #30d158; }
-            col { width: 68pt; }
         </style></head>
-        <body>
-        <table>
-            <colgroup><col><col><col><col><col><col><col><col></colgroup>
-            <tr><td colspan="8" class="header">${year} ${monthName}</td></tr>
+        <body><table>
+            <tr><td colspan="8" class="header">${year} ${monthName.toUpperCase()}</td></tr>
             <tr><td>Hét</td>${dayNames.map(n => `<td>${n}</td>`).join('')}</tr>`;
 
-        let firstDay = new Date(year, month, 1);
-        let lastDay = new Date(year, month + 1, 0).getDate();
         let currentDay = 1;
+        let lastDay = new Date(year, month + 1, 0).getDate();
         let totalCount = 0;
         let totalHours = 0;
 
@@ -318,61 +310,38 @@
             let startShift = (new Date(year, month, currentDay).getDay() + 6) % 7;
             for (let col = 0; col < 7; col++) {
                 if ((row === 0 && col < startShift) || currentDay > lastDay) {
-                    dayRow += `<td></td>`;
-                    valRow += `<td></td>`;
+                    dayRow += `<td></td>`; valRow += `<td></td>`;
                 } else {
                     let key = `${mode}_${year}_${month}_${currentDay}`;
                     dayRow += `<td>${currentDay}</td>`;
                     if (workData[key]) {
-                        if (mode === 'presence') {
-                            valRow += `<td class="present"></td>`;
-                            totalCount++;
-                        } else {
-                            valRow += `<td>${workData[key].total}</td>`;
-                            totalHours += parseFloat(workData[key].total);
-                            totalCount++;
-                        }
+                        if (mode === 'presence') { valRow += `<td class="present"></td>`; totalCount++; }
+                        else { valRow += `<td>${workData[key].total}</td>`; totalHours += parseFloat(workData[key].total); totalCount++; }
                     } else { valRow += `<td></td>`; }
                     currentDay++;
                 }
             }
-            html += dayRow + "</tr>" + valRow + "</tr>";
+            template += dayRow + "</tr>" + valRow + "</tr>";
         }
 
         let wage = parseInt(wages[mode]) || 0;
-        html += `<tr><td colspan="8"></td></tr>`;
+        template += `<tr><td colspan="8" style="border:none; height:15pt;"></td></tr>`;
         if (mode === 'presence') {
-            html += `<tr><td>N.b.</td><td>${wage} Ft</td></tr>`;
-            html += `<tr><td>M.n.</td><td>${totalCount}</td></tr>`;
-            html += `<tr><td>Fiz.</td><td>${Math.round(totalCount * wage)} Ft</td></tr>`;
+            template += `<tr><td>N.b.</td><td>${wage} Ft</td></tr><tr><td>M.n.</td><td>${totalCount}</td></tr><tr><td>Fiz.</td><td>${Math.round(totalCount * wage)} Ft</td></tr>`;
         } else {
-            html += `<tr><td>Ó.b.</td><td>${wage} Ft</td></tr>`;
-            html += `<tr><td>M.n.</td><td>${totalCount}</td></tr>`;
-            html += `<tr><td>L.ó.</td><td>${totalHours.toFixed(2)}</td></tr>`;
-            html += `<tr><td>Fiz.</td><td>${Math.round(totalHours * wage)} Ft</td></tr>`;
+            template += `<tr><td>Ó.b.</td><td>${wage} Ft</td></tr><tr><td>M.n.</td><td>${totalCount}</td></tr><tr><td>L.ó.</td><td>${totalHours.toFixed(2)}</td></tr><tr><td>Fiz.</td><td>${Math.round(totalHours * wage)} Ft</td></tr>`;
         }
+        template += `</table></body></html>`;
 
-        html += `</table></body></html>`;
+        await fetch(`${DB_URL}exports/${currentUser.name}/${year}_${month}.json`, { method: 'PUT', body: JSON.stringify({ ts: Date.now() }) });
 
-        // Firebase-be mentés törléshez
-        await fetch(`${DB_URL}exports/${currentUser.name}/${year}_${month}.json`, { 
-            method: 'PUT', 
-            body: JSON.stringify({ ts: Date.now(), data: "Excel Export" }) 
-        });
-
-        // Letöltés kényszerített .csv kiterjesztéssel
-        const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
-        const url = URL.createObjectURL(blob);
+        const blob = new Blob([template], { type: 'application/vnd.ms-excel' });
         const link = document.createElement("a");
-        link.href = url;
-        link.download = `${year}*${monthName}.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.download = `${year}*${monthName}.xls`; // .xls kiterjesztés az automatikus felismeréshez
         document.body.appendChild(link);
         link.click();
-        
-        setTimeout(() => {
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-        }, 100);
+        document.body.removeChild(link);
     }
 
     async function deleteEntry() { delete workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${selectedDay}`]; await syncData(); closeModal('time-modal'); render(); }
