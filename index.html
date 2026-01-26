@@ -35,10 +35,8 @@
         .grid-header { font-size: 11px; font-weight: bold; color: var(--accent); text-align: center; }
         .week-num { font-size: 10px; color: var(--secondary); align-self: center; text-align: center; }
         
-        .day-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--card); min-height: 65px; border-radius: 12px; font-size: 14px; border: 1px solid var(--border); text-align: center; }
-        .day-cell.active-presence { background: var(--accent); border-color: #5ea8ff; }
+        .day-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--card); min-height: 65px; border-radius: 12px; font-size: 14px; border: 1px solid var(--border); }
         .day-val { font-size: 10px; font-weight: bold; color: var(--success); margin-top: 4px; }
-        .active-presence .day-val { color: #fff; }
 
         .summary-section { background: var(--card); padding: 15px; border-radius: 20px; border: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; }
         .sum-full { grid-column: span 2; border-top: 1px solid var(--border); padding-top: 10px; }
@@ -252,10 +250,8 @@
                 if ((row === 0 && col < startShift) || dateCounter > lastDay.getDate()) body.innerHTML += `<div></div>`;
                 else {
                     let key = `${mode}_${d.getFullYear()}_${d.getMonth()}_${dateCounter}`;
-                    let isPresent = workData[key] ? true : false;
-                    let val = (mode==='round15' && isPresent) ? workData[key].total+"ó" : "";
-                    let activeClass = (mode==='presence' && isPresent) ? " active-presence" : "";
-                    body.innerHTML += `<div class="day-cell${activeClass}" onclick="dayClick(${dateCounter})">${dateCounter}<div class="day-val">${val}</div></div>`;
+                    let val = workData[key] ? (mode==='presence' ? "✓" : workData[key].total+"ó") : "";
+                    body.innerHTML += `<div class="day-cell" onclick="dayClick(${dateCounter})">${dateCounter}<div class="day-val">${val}</div></div>`;
                     dateCounter++;
                 }
             }
@@ -292,7 +288,7 @@
         const monthName = months[month];
         const dayNames = ["H", "K", "Sze", "Cs", "P", "Szo", "V"];
         
-        // Export fejléce és oszlopszélesség indikáció (megjegyzésben vagy struktúrában)
+        // Export fejléce
         let csv = "\uFEFF" + `${year} ${monthName};;;;;;;\n`; 
         csv += "Hét;" + dayNames.join(";") + "\n"; 
 
@@ -313,15 +309,20 @@
                     rowDays += ";"; rowVals += ";";
                 } else {
                     let key = `${mode}_${year}_${month}_${currentDay}`;
-                    rowDays += `${currentDay};`;
+                    rowDays += `${currentDay};`; // Nap száma (középre igazított)
                     if (workData[key]) {
-                        if (mode === 'presence') { rowVals += "X;"; totalCount++; }
-                        else { rowVals += `${workData[key].total};`; totalHours += parseFloat(workData[key].total); totalCount++; }
+                        if (mode === 'presence') { 
+                            rowVals += ";"; // Jelenlét esetén üres marad az adat sor, csak a fejléc (nap) kap jelzést
+                            totalCount++; 
+                        } else { 
+                            rowVals += `${workData[key].total};`; 
+                            totalHours += parseFloat(workData[key].total); 
+                            totalCount++; 
+                        }
                     } else { rowVals += ";"; }
                     currentDay++;
                 }
             }
-            // CSV minden mező középre igazítottnak tekintendő az Excelben
             csv += rowDays + "\n" + rowVals + "\n";
         }
 
