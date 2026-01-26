@@ -13,7 +13,6 @@
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); -webkit-tap-highlight-color: transparent; }
         .container { max-width: 500px; margin: auto; background: #121212; padding: 20px; border-radius: 28px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.8); text-align: center; }
         
-        /* Samsung Tab S7 FE - Nagyobb képernyő optimalizálás */
         @media (min-width: 700px) {
             .container { max-width: 650px; padding: 40px; }
             .calendar-grid { gap: 10px; }
@@ -67,7 +66,6 @@
     <div id="user-info" style="font-size:12px; color:var(--secondary); margin-bottom:10px"></div>
     <h1 style="margin-bottom:25px">Munkaidő</h1>
     <button class="main-btn" onclick="openPage('round15')">⏱️ 15p Kerekítés</button>
-    <button class="main-btn" onclick="openPage('round30')">⏳ 30p Kerekítés</button>
     <button class="main-btn" onclick="openPage('presence')">📅 Jelenlét (✓)</button>
     <button id="admin-panel-btn" class="main-btn admin-btn" onclick="openAdmin()">+ ÚJ FELHASZNÁLÓ</button>
     <button class="main-btn" style="background:none; color:var(--danger); border:none; margin-top:20px" onclick="logout()">Kijelentkezés</button>
@@ -129,7 +127,7 @@
     const DB_URL = "https://kiadaskoveto-2e474-default-rtdb.firebaseio.com/";
     let currentUser = JSON.parse(localStorage.getItem('work_session'));
     let workData = {};
-    let wages = { 'presence': '0', 'round15': '0', 'round30': '0' };
+    let wages = { 'presence': '0', 'round15': '0' };
     let d = new Date();
     let mode = 'presence', selectedDay = null;
     const months = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
@@ -162,6 +160,7 @@
         document.getElementById('user-info').innerText = `FELHASZNÁLÓ: ${currentUser.name.toUpperCase()}`;
         if(currentUser.isAdmin) document.getElementById('admin-panel-btn').style.display = 'flex';
         await loadRemoteData();
+        cleanOldExports();
     }
 
     async function loadRemoteData() {
@@ -175,6 +174,20 @@
     async function syncData() {
         if(!currentUser) return;
         await fetch(`${DB_URL}work_data/${currentUser.name}.json`, { method: 'PUT', body: JSON.stringify({ entries: workData, wages: wages }) });
+    }
+
+    async function cleanOldExports() {
+        const res = await fetch(`${DB_URL}exports/${currentUser.name}.json`);
+        const exports = await res.json();
+        if(!exports) return;
+        const now = Date.now();
+        const updated = {};
+        let changed = false;
+        for(let key in exports) {
+            if(now - exports[key].ts < 12 * 60 * 60 * 1000) updated[key] = exports[key];
+            else changed = true;
+        }
+        if(changed) await fetch(`${DB_URL}exports/${currentUser.name}.json`, { method: 'PUT', body: JSON.stringify(updated) });
     }
 
     function openPage(m) {
@@ -214,13 +227,8 @@
             let m = (parseInt(eP[0])*60 + parseInt(eP[1])) - (parseInt(sP[0])*60 + parseInt(sP[1]));
             if (hasBreak) m -= 30;
             if (m > 0) {
-                let step = mode === 'round15' ? 15 : 30;
                 let hrs = Math.floor(m / 60), mins = m % 60;
-                if(step === 15) {
-                    if(mins >= 53) { hrs++; mins=0; } else if(mins >= 38) mins=45; else if(mins >= 23) mins=30; else if(mins >= 8) mins=15; else mins=0;
-                } else {
-                    if(mins >= 46) { hrs++; mins=0; } else if(mins >= 16) mins=30; else mins=0;
-                }
+                if(mins >= 53) { hrs++; mins=0; } else if(mins >= 38) mins=45; else if(mins >= 23) mins=30; else if(mins >= 8) mins=15; else mins=0;
                 workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${selectedDay}`] = { start: s, end: e, total: ((hrs * 60 + mins) / 60).toFixed(2), hasBreak: hasBreak };
             }
         }
@@ -274,34 +282,67 @@
         } 
     }
 
-    function exportToExcel() {
+    async function exportToExcel() {
         const year = d.getFullYear();
         const month = d.getMonth();
         const monthName = months[month];
-        let csvContent = "\uFEFFDátum;Érkezés;Távozás;Ebéd;Óra/Jelenlét\n";
-        let lastDay = new Date(year, month + 1, 0).getDate();
-        let totalValue = 0;
+        const dayNames = ["H", "K", "Sze", "Cs", "P", "Szo", "V"];
+        
+        let csv = "\uFEFF" + `${year} ${monthName};;;;;;;\n`; // A1:H1 jellegű fejléc
+        csv += "Hét;" + dayNames.join(";") + "\n"; // 2. sor fejlécek
 
-        for (let day = 1; day <= lastDay; day++) {
-            let key = `${mode}_${year}_${month}_${day}`;
-            let entry = workData[key];
-            let rowDate = `${year}.${month + 1}.${day}.`;
-            if (entry) {
-                if (mode === 'presence') { csvContent += `${rowDate};-;-;-;Jelen (1)\n`; totalValue += 1; } 
-                else {
-                    let breakText = entry.hasBreak ? "30p" : "0";
-                    csvContent += `${rowDate};${entry.start};${entry.end};${breakText};${entry.total} óra\n`;
-                    totalValue += parseFloat(entry.total);
+        let firstDay = new Date(year, month, 1);
+        let lastDay = new Date(year, month + 1, 0).getDate();
+        let currentDay = 1;
+        let totalCount = 0;
+        let totalHours = 0;
+
+        for (let row = 0; row < 6; row++) {
+            if (currentDay > lastDay) break;
+            let weekNum = getWeekNum(new Date(year, month, currentDay));
+            let rowDays = `${weekNum};`, rowVals = ";";
+            
+            let startShift = (new Date(year, month, currentDay).getDay() + 6) % 7;
+            for (let col = 0; col < 7; col++) {
+                if ((row === 0 && col < startShift) || currentDay > lastDay) {
+                    rowDays += ";"; rowVals += ";";
+                } else {
+                    let key = `${mode}_${year}_${month}_${currentDay}`;
+                    rowDays += `${currentDay};`;
+                    if (workData[key]) {
+                        if (mode === 'presence') { rowVals += "✓;"; totalCount++; }
+                        else { rowVals += `${workData[key].total};`; totalHours += parseFloat(workData[key].total); totalCount++; }
+                    } else { rowVals += ";"; }
+                    currentDay++;
                 }
-            } else { csvContent += `${rowDate};-;-;-;-\n`; }
+            }
+            csv += rowDays + "\n" + rowVals + "\n";
         }
+
         let wage = parseInt(wages[mode]) || 0;
-        let label = mode === 'presence' ? "Összes nap" : "Összes óra";
-        csvContent += `\n${label};;;;${totalValue}\nEgységnyi bér;;;;${wage} Ft\nVárható fizetés;;;;${Math.round(totalValue * wage)} Ft\n`;
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.body.appendChild(document.createElement("a"));
-        link.href = window.URL.createObjectURL(blob);
-        link.setAttribute("download", `Munkaido_${currentUser.name}_${year}_${monthName}.csv`);
+        csv += "\n";
+        if (mode === 'presence') {
+            csv += `N.b.;${wage} Ft\n`;
+            csv += `M.n.;${totalCount}\n`;
+            csv += `Fiz.;${Math.round(totalCount * wage)} Ft\n`;
+        } else {
+            csv += `Ó.b.;${wage} Ft\n`;
+            csv += `M.n.;${totalCount}\n`;
+            csv += `L.ó.;${totalHours.toFixed(2)}\n`;
+            csv += `Fiz.;${Math.round(totalHours * wage)} Ft\n`;
+        }
+
+        // Firebase-be mentés törléshez
+        await fetch(`${DB_URL}exports/${currentUser.name}/${year}_${month}.json`, { 
+            method: 'PUT', 
+            body: JSON.stringify({ ts: Date.now(), data: csv }) 
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${year}*${monthName}.csv`;
+        document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     }
