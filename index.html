@@ -288,8 +288,20 @@
         const monthName = months[month];
         const dayNames = ["H", "K", "Sze", "Cs", "P", "Szo", "V"];
         
-        let csv = "\uFEFF" + `${year} ${monthName};;;;;;;\n`; // A1:H1 jellegű fejléc
-        csv += "Hét;" + dayNames.join(";") + "\n"; // 2. sor fejlécek
+        // HTML alapú Excel formázás (szín és oszlopszélesség miatt)
+        let html = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head><meta charset="utf-8"><style>
+            td { text-align: center; vertical-align: middle; border: 0.5pt solid #000000; font-size: 12pt; }
+            .header { font-size: 14pt; font-weight: bold; }
+            .present { background-color: #30d158; }
+            col { width: 68pt; }
+        </style></head>
+        <body>
+        <table>
+            <colgroup><col><col><col><col><col><col><col><col></colgroup>
+            <tr><td colspan="8" class="header">${year} ${monthName}</td></tr>
+            <tr><td>Hét</td>${dayNames.map(n => `<td>${n}</td>`).join('')}</tr>`;
 
         let firstDay = new Date(year, month, 1);
         let lastDay = new Date(year, month + 1, 0).getDate();
@@ -300,51 +312,67 @@
         for (let row = 0; row < 6; row++) {
             if (currentDay > lastDay) break;
             let weekNum = getWeekNum(new Date(year, month, currentDay));
-            let rowDays = `${weekNum};`, rowVals = ";";
+            let dayRow = `<tr><td>${weekNum}</td>`;
+            let valRow = `<tr><td></td>`;
             
             let startShift = (new Date(year, month, currentDay).getDay() + 6) % 7;
             for (let col = 0; col < 7; col++) {
                 if ((row === 0 && col < startShift) || currentDay > lastDay) {
-                    rowDays += ";"; rowVals += ";";
+                    dayRow += `<td></td>`;
+                    valRow += `<td></td>`;
                 } else {
                     let key = `${mode}_${year}_${month}_${currentDay}`;
-                    rowDays += `${currentDay};`;
+                    dayRow += `<td>${currentDay}</td>`;
                     if (workData[key]) {
-                        if (mode === 'presence') { rowVals += "✓;"; totalCount++; }
-                        else { rowVals += `${workData[key].total};`; totalHours += parseFloat(workData[key].total); totalCount++; }
-                    } else { rowVals += ";"; }
+                        if (mode === 'presence') {
+                            valRow += `<td class="present"></td>`;
+                            totalCount++;
+                        } else {
+                            valRow += `<td>${workData[key].total}</td>`;
+                            totalHours += parseFloat(workData[key].total);
+                            totalCount++;
+                        }
+                    } else { valRow += `<td></td>`; }
                     currentDay++;
                 }
             }
-            csv += rowDays + "\n" + rowVals + "\n";
+            html += dayRow + "</tr>" + valRow + "</tr>";
         }
 
         let wage = parseInt(wages[mode]) || 0;
-        csv += "\n";
+        html += `<tr><td colspan="8"></td></tr>`;
         if (mode === 'presence') {
-            csv += `N.b.;${wage} Ft\n`;
-            csv += `M.n.;${totalCount}\n`;
-            csv += `Fiz.;${Math.round(totalCount * wage)} Ft\n`;
+            html += `<tr><td>N.b.</td><td>${wage} Ft</td></tr>`;
+            html += `<tr><td>M.n.</td><td>${totalCount}</td></tr>`;
+            html += `<tr><td>Fiz.</td><td>${Math.round(totalCount * wage)} Ft</td></tr>`;
         } else {
-            csv += `Ó.b.;${wage} Ft\n`;
-            csv += `M.n.;${totalCount}\n`;
-            csv += `L.ó.;${totalHours.toFixed(2)}\n`;
-            csv += `Fiz.;${Math.round(totalHours * wage)} Ft\n`;
+            html += `<tr><td>Ó.b.</td><td>${wage} Ft</td></tr>`;
+            html += `<tr><td>M.n.</td><td>${totalCount}</td></tr>`;
+            html += `<tr><td>L.ó.</td><td>${totalHours.toFixed(2)}</td></tr>`;
+            html += `<tr><td>Fiz.</td><td>${Math.round(totalHours * wage)} Ft</td></tr>`;
         }
+
+        html += `</table></body></html>`;
 
         // Firebase-be mentés törléshez
         await fetch(`${DB_URL}exports/${currentUser.name}/${year}_${month}.json`, { 
             method: 'PUT', 
-            body: JSON.stringify({ ts: Date.now(), data: csv }) 
+            body: JSON.stringify({ ts: Date.now(), data: "Excel Export" }) 
         });
 
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        // Letöltés kényszerített .csv kiterjesztéssel
+        const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+        const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
+        link.href = url;
         link.download = `${year}*${monthName}.csv`;
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        
+        setTimeout(() => {
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        }, 100);
     }
 
     async function deleteEntry() { delete workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${selectedDay}`]; await syncData(); closeModal('time-modal'); render(); }
