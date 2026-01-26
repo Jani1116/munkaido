@@ -13,39 +13,26 @@
         }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); -webkit-tap-highlight-color: transparent; }
         .container { max-width: 500px; margin: auto; background: #121212; padding: 20px; border-radius: 28px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.8); text-align: center; }
-        
-        @media (min-width: 700px) {
-            .container { max-width: 650px; padding: 40px; }
-            .calendar-grid { gap: 10px; }
-            .day-cell { min-height: 90px; font-size: 18px; }
-        }
-
+        @media (min-width: 700px) { .container { max-width: 650px; padding: 40px; } .calendar-grid { gap: 10px; } .day-cell { min-height: 90px; font-size: 18px; } }
         #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
         input { width: 100%; background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 12px; color: #fff; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
         input:focus { outline: 2px solid var(--accent); border-color: transparent; }
-        
         .main-btn { display: flex; align-items: center; justify-content: center; background: var(--card); color: white; padding: 18px; margin: 12px auto; border: 1px solid var(--border); border-radius: 16px; font-size: 16px; width: 100%; cursor: pointer; transition: 0.2s; font-weight: bold; }
         .main-btn:active { transform: scale(0.97); background: #2c2c2e; }
         .accent-btn { background: var(--accent); border: none; }
         .admin-btn { background: var(--admin); border: none; display: none; }
-
         .nav-row { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; background: var(--card); padding: 10px 15px; border-radius: 14px; border: 1px solid var(--border); }
         .nav-btn { background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; padding: 5px 10px; }
-
         .calendar-grid { display: grid; grid-template-columns: 40px repeat(7, 1fr); gap: 6px; margin: 15px 0; }
         .grid-header { font-size: 11px; font-weight: bold; color: var(--accent); text-align: center; }
         .week-num { font-size: 10px; color: var(--secondary); align-self: center; text-align: center; }
-        
         .day-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--card); min-height: 65px; border-radius: 12px; font-size: 14px; border: 1px solid var(--border); }
         .day-val { font-size: 10px; font-weight: bold; color: var(--success); margin-top: 4px; }
-
         .summary-section { background: var(--card); padding: 15px; border-radius: 20px; border: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; }
         .sum-full { grid-column: span 2; border-top: 1px solid var(--border); padding-top: 10px; }
         .salary-input { background: #000; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 10px; width: 100%; font-size: 16px; box-sizing: border-box; }
-
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { background: var(--card); padding: 25px; border-radius: 24px; width: 85%; max-width: 320px; border: 1px solid var(--border); }
-        
         #loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; display: none; align-items: center; justify-content: center; color: white; font-weight: bold; }
         .hidden { display: none; }
     </style>
@@ -55,7 +42,7 @@
 <div id="loading-overlay">Szinkronizálás...</div>
 
 <div id="login-screen">
-    <h2 style="margin-bottom:20px">Munkaidő Belépés</h2>
+    <h2>Munkaidő Belépés</h2>
     <div style="width:100%; max-width:300px">
         <input type="text" id="login-user" placeholder="Felhasználónév">
         <input type="password" id="login-pass" placeholder="Jelszó">
@@ -65,7 +52,7 @@
 
 <div id="page-main" class="container hidden">
     <div id="user-info" style="font-size:12px; color:var(--secondary); margin-bottom:10px"></div>
-    <h1 style="margin-bottom:25px">Munkaidő</h1>
+    <h1>Munkaidő</h1>
     <button class="main-btn" onclick="openPage('round15')">⏱️ 15p Kerekítés</button>
     <button class="main-btn" onclick="openPage('presence')">📅 Jelenlét (✓)</button>
     <button id="admin-panel-btn" class="main-btn admin-btn" onclick="openAdmin()">+ ÚJ FELHASZNÁLÓ</button>
@@ -81,7 +68,6 @@
         <button class="nav-btn" onclick="changeMonth(1)">❯</button>
     </div>
     <div class="calendar-grid" id="calendar-body"></div>
-    
     <div class="summary-section">
         <div class="sum-box">
             <span id="label-wage" style="font-size:10px; color:var(--secondary)">ÓRABÉR</span>
@@ -127,20 +113,13 @@
 <script>
     const DB_URL = "https://kiadaskoveto-2e474-default-rtdb.firebaseio.com/";
     let currentUser = JSON.parse(localStorage.getItem('work_session'));
-    let workData = {};
-    let wages = { 'presence': '0', 'round15': '0' };
-    let d = new Date();
-    let mode = 'presence', selectedDay = null;
+    let workData = {}, wages = { 'presence': '0', 'round15': '0' }, d = new Date(), mode = 'presence', selectedDay = null;
     const months = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
 
-    window.addEventListener('popstate', () => { 
-        if (!document.getElementById('page-main').classList.contains('hidden')) return; 
-        backToMenu(true); 
-    });
+    window.addEventListener('popstate', () => { if (!document.getElementById('page-main').classList.contains('hidden')) return; backToMenu(true); });
 
     async function handleLogin() {
-        const u = document.getElementById('login-user').value.trim();
-        const p = document.getElementById('login-pass').value.trim();
+        const u = document.getElementById('login-user').value.trim(), p = document.getElementById('login-pass').value.trim();
         if(!u || !p) return;
         showLoading(true);
         try {
@@ -182,50 +161,37 @@
         const exports = await res.json();
         if(!exports) return;
         const now = Date.now();
-        let changed = false;
         for(let key in exports) {
             if(now - exports[key].ts > 12 * 60 * 60 * 1000) {
                 await fetch(`${DB_URL}exports/${currentUser.name}/${key}.json`, { method: 'DELETE' });
-                changed = true;
             }
         }
     }
 
     function openPage(m) {
-        mode = m;
-        history.pushState({page: 'view'}, '');
+        mode = m; history.pushState({page: 'view'}, '');
         document.getElementById('page-main').classList.add('hidden');
         document.getElementById('page-view').classList.remove('hidden');
         document.getElementById('label-total').innerText = mode === 'presence' ? "NAPOK" : "ÓRÁK";
         document.getElementById('label-wage').innerText = mode === 'presence' ? "NAPI FIZETÉS" : "ÓRABÉR";
         document.getElementById('view-title').innerText = mode === 'presence' ? "Jelenléti ív" : "Munkaidő napló";
-        const val = wages[mode] || "0";
-        const input = document.getElementById('wage-input');
+        const val = wages[mode] || "0", input = document.getElementById('wage-input');
         input.value = val === "0" ? "" : parseInt(val).toLocaleString('hu-HU') + " Ft";
         render();
     }
 
     function formatCurrency(i) { 
-        let v = i.value.replace(/\D/g, ""); 
-        if(!v) { i.value = ""; return; }
+        let v = i.value.replace(/\D/g, ""); if(!v) { i.value = ""; return; }
         i.value = parseInt(v).toLocaleString('hu-HU') + " Ft";
-        let pos = i.value.length - 3;
-        i.setSelectionRange(pos, pos);
+        let pos = i.value.length - 3; i.setSelectionRange(pos, pos);
     }
 
-    async function saveWages() { 
-        let v = document.getElementById('wage-input').value.replace(/\D/g, "");
-        wages[mode] = v || "0"; 
-        await syncData(); 
-        calculateTotal(); 
-    }
+    async function saveWages() { let v = document.getElementById('wage-input').value.replace(/\D/g, ""); wages[mode] = v || "0"; await syncData(); calculateTotal(); }
 
     async function saveTime() {
-        let s = document.getElementById('start-time').value, e = document.getElementById('end-time').value;
-        let hasBreak = document.getElementById('break-toggle').checked;
+        let s = document.getElementById('start-time').value, e = document.getElementById('end-time').value, hasBreak = document.getElementById('break-toggle').checked;
         if (s.includes(':') && e.includes(':')) {
-            let sP = s.split(':'), eP = e.split(':');
-            let m = (parseInt(eP[0])*60 + parseInt(eP[1])) - (parseInt(sP[0])*60 + parseInt(sP[1]));
+            let sP = s.split(':'), eP = e.split(':'), m = (parseInt(eP[0])*60 + parseInt(eP[1])) - (parseInt(sP[0])*60 + parseInt(sP[1]));
             if (hasBreak) m -= 30;
             if (m > 0) {
                 let hrs = Math.floor(m / 60), mins = m % 60;
@@ -240,18 +206,14 @@
         document.getElementById('month-display').innerText = `${d.getFullYear()}. ${months[d.getMonth()]}`;
         const body = document.getElementById('calendar-body');
         body.innerHTML = '<div class="grid-header"></div>' + ["H", "K", "Sze", "Cs", "P", "Szo", "V"].map(h => `<div class="grid-header">${h}</div>`).join('');
-        let firstDay = new Date(d.getFullYear(), d.getMonth(), 1);
-        let lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-        let startShift = (firstDay.getDay() + 6) % 7;
-        let dateCounter = 1;
+        let firstDay = new Date(d.getFullYear(), d.getMonth(), 1), lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0), startShift = (firstDay.getDay() + 6) % 7, dateCounter = 1;
         for (let row = 0; row < 6; row++) {
             if (dateCounter > lastDay.getDate()) break;
             body.innerHTML += `<div class="week-num">${getWeekNum(new Date(d.getFullYear(), d.getMonth(), dateCounter))}</div>`;
             for (let col = 0; col < 7; col++) {
                 if ((row === 0 && col < startShift) || dateCounter > lastDay.getDate()) body.innerHTML += `<div></div>`;
                 else {
-                    let key = `${mode}_${d.getFullYear()}_${d.getMonth()}_${dateCounter}`;
-                    let val = workData[key] ? (mode==='presence' ? "✓" : workData[key].total+"ó") : "";
+                    let key = `${mode}_${d.getFullYear()}_${d.getMonth()}_${dateCounter}`, val = workData[key] ? (mode==='presence' ? "✓" : workData[key].total+"ó") : "";
                     body.innerHTML += `<div class="day-cell" onclick="dayClick(${dateCounter})">${dateCounter}<div class="day-val">${val}</div></div>`;
                     dateCounter++;
                 }
@@ -268,85 +230,37 @@
         document.getElementById('total-money').innerText = Math.round(total * w).toLocaleString('hu-HU') + " Ft";
     }
 
-    function dayClick(day) { 
-        selectedDay = day; 
-        if(mode==='presence') { 
-            let key=`${mode}_${d.getFullYear()}_${d.getMonth()}_${day}`; 
-            workData[key]=workData[key]?null:1; syncData().then(render); 
-        } else { 
-            let entry = workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${day}`] || {};
-            document.getElementById('modal-date').innerText = `${months[d.getMonth()]} ${day}.`;
-            document.getElementById('start-time').value = entry.start || "";
-            document.getElementById('end-time').value = entry.end || "";
-            document.getElementById('break-toggle').checked = entry.hasBreak || false;
-            document.getElementById('time-modal').style.display='flex'; 
-        } 
-    }
+    function dayClick(day) { selectedDay = day; if(mode==='presence') { let key=`${mode}_${d.getFullYear()}_${d.getMonth()}_${day}`; workData[key]=workData[key]?null:1; syncData().then(render); } else { let entry = workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${day}`] || {}; document.getElementById('modal-date').innerText = `${months[d.getMonth()]} ${day}.`; document.getElementById('start-time').value = entry.start || ""; document.getElementById('end-time').value = entry.end || ""; document.getElementById('break-toggle').checked = entry.hasBreak || false; document.getElementById('time-modal').style.display='flex'; } }
 
     async function exportToExcel() {
-        const year = d.getFullYear();
-        const month = d.getMonth();
-        const monthName = months[month];
-        const dayNames = ["Hét", "H", "K", "Sze", "Cs", "P", "Szo", "V"];
-        
-        let rows = [];
-        rows.push([`${year} ${monthName}`, "", "", "", "", "", "", ""]); 
-        rows.push(dayNames);
-
-        let lastDay = new Date(year, month + 1, 0).getDate();
-        let currentDay = 1;
-
+        const year = d.getFullYear(), month = d.getMonth(), monthName = months[month];
+        const rows = [ [`${year} ${monthName}`], ["Hét", "H", "K", "Sze", "Cs", "P", "Szo", "V"] ];
+        let lastDay = new Date(year, month + 1, 0).getDate(), currentDay = 1;
         for (let row = 0; row < 6; row++) {
             if (currentDay > lastDay) break;
-            let dateRow = [getWeekNum(new Date(year, month, currentDay))];
-            let valRow = [""]; 
+            let dateRow = [getWeekNum(new Date(year, month, currentDay))], valRow = [""];
             let startShift = (new Date(year, month, currentDay).getDay() + 6) % 7;
             for (let col = 0; col < 7; col++) {
-                if ((row === 0 && col < startShift) || currentDay > lastDay) {
-                    dateRow.push(""); valRow.push("");
-                } else {
+                if ((row === 0 && col < startShift) || currentDay > lastDay) { dateRow.push(""); valRow.push(""); }
+                else {
                     let key = `${mode}_${year}_${month}_${currentDay}`;
                     dateRow.push(currentDay);
                     valRow.push(workData[key] ? (mode === 'presence' ? "✓" : workData[key].total) : "");
                     currentDay++;
                 }
             }
-            rows.push(dateRow); rows.push(valRow);
+            rows.push(dateRow, valRow);
         }
-
-        rows.push([]);
-        rows.push(["Összesen", document.getElementById('total-count').innerText, "Fizetés", document.getElementById('total-money').innerText]);
-
-        const ws = XLSX.utils.aoa_to_sheet(rows);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Munkaidő");
-
-        // Oszlopszélesség: 9 karakter (~68px) és középre igazítás metaadat
-        ws['!cols'] = Array(8).fill({ wch: 9 });
-        
-        // Cella igazítás beállítása minden cellára
-        Object.keys(ws).forEach(s => {
-            if(s[0] === '!') return;
-            ws[s].s = { alignment: { horizontal: "center", vertical: "center" } };
-        });
-
-        // Firebase log mentés 12 órás törléshez (csak metaadat)
-        await fetch(`${DB_URL}exports/${currentUser.name}/${year}_${month}.json`, { 
-            method: 'PUT', body: JSON.stringify({ ts: Date.now(), mode: mode }) 
-        });
-
+        rows.push([], ["Összesen", document.getElementById('total-count').innerText, "Fizetés", document.getElementById('total-money').innerText]);
+        const ws = XLSX.utils.aoa_to_sheet(rows), wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Munkaido");
+        ws['!cols'] = Array(8).fill({ wch: 10 });
+        await fetch(`${DB_URL}exports/${currentUser.name}/${year}_${month}.json`, { method: 'PUT', body: JSON.stringify({ ts: Date.now() }) });
         XLSX.writeFile(wb, `${year}_${monthName}_munkaido.xlsx`);
     }
 
     async function deleteEntry() { delete workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${selectedDay}`]; await syncData(); closeModal('time-modal'); render(); }
-    async function addUser() {
-        const name = document.getElementById('new-user-name').value.trim();
-        const pass = document.getElementById('new-user-pass').value.trim();
-        if(!name || !pass) return;
-        showLoading(true);
-        await fetch(`${DB_URL}users_auth/${name}.json`, { method: 'PUT', body: JSON.stringify(pass) });
-        alert(name + " létrehozva!"); closeModal('admin-modal'); showLoading(false);
-    }
+    async function addUser() { const name = document.getElementById('new-user-name').value.trim(), pass = document.getElementById('new-user-pass').value.trim(); if(!name || !pass) return; showLoading(true); await fetch(`${DB_URL}users_auth/${name}.json`, { method: 'PUT', body: JSON.stringify(pass) }); alert(name + " létrehozva!"); closeModal('admin-modal'); showLoading(false); }
     function openAdmin() { document.getElementById('admin-modal').style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
     function backToMenu(pop = false) { document.getElementById('page-view').classList.add('hidden'); document.getElementById('page-main').classList.remove('hidden'); if(!pop) history.back(); }
