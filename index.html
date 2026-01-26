@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Munkaidő PRO - Sync & Admin</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
         :root {
             --bg: #000000; --card: #1c1c1e; --text: #ffffff;
@@ -181,13 +182,13 @@
         const exports = await res.json();
         if(!exports) return;
         const now = Date.now();
-        const updated = {};
         let changed = false;
         for(let key in exports) {
-            if(now - exports[key].ts < 12 * 60 * 60 * 1000) updated[key] = exports[key];
-            else changed = true;
+            if(now - exports[key].ts > 12 * 60 * 60 * 1000) {
+                await fetch(`${DB_URL}exports/${currentUser.name}/${key}.json`, { method: 'DELETE' });
+                changed = true;
+            }
         }
-        if(changed) await fetch(`${DB_URL}exports/${currentUser.name}.json`, { method: 'PUT', body: JSON.stringify(updated) });
     }
 
     function openPage(m) {
@@ -286,71 +287,55 @@
         const year = d.getFullYear();
         const month = d.getMonth();
         const monthName = months[month];
-        const dayNames = ["H", "K", "Sze", "Cs", "P", "Szo", "V"];
+        const dayNames = ["Hét", "H", "K", "Sze", "Cs", "P", "Szo", "V"];
         
-        // Export fejléce
-        let csv = "\uFEFF" + `${year} ${monthName};;;;;;;\n`; 
-        csv += "Hét;" + dayNames.join(";") + "\n"; 
+        let rows = [];
+        rows.push([`${year} ${monthName}`, "", "", "", "", "", "", ""]); 
+        rows.push(dayNames);
 
-        let firstDay = new Date(year, month, 1);
         let lastDay = new Date(year, month + 1, 0).getDate();
         let currentDay = 1;
-        let totalCount = 0;
-        let totalHours = 0;
 
         for (let row = 0; row < 6; row++) {
             if (currentDay > lastDay) break;
-            let weekNum = getWeekNum(new Date(year, month, currentDay));
-            let rowDays = `${weekNum};`, rowVals = ";";
-            
+            let dateRow = [getWeekNum(new Date(year, month, currentDay))];
+            let valRow = [""]; 
             let startShift = (new Date(year, month, currentDay).getDay() + 6) % 7;
             for (let col = 0; col < 7; col++) {
                 if ((row === 0 && col < startShift) || currentDay > lastDay) {
-                    rowDays += ";"; rowVals += ";";
+                    dateRow.push(""); valRow.push("");
                 } else {
                     let key = `${mode}_${year}_${month}_${currentDay}`;
-                    rowDays += `${currentDay};`; // Nap száma (középre igazított)
-                    if (workData[key]) {
-                        if (mode === 'presence') { 
-                            rowVals += ";"; // Jelenlét esetén üres marad az adat sor, csak a fejléc (nap) kap jelzést
-                            totalCount++; 
-                        } else { 
-                            rowVals += `${workData[key].total};`; 
-                            totalHours += parseFloat(workData[key].total); 
-                            totalCount++; 
-                        }
-                    } else { rowVals += ";"; }
+                    dateRow.push(currentDay);
+                    valRow.push(workData[key] ? (mode === 'presence' ? "✓" : workData[key].total) : "");
                     currentDay++;
                 }
             }
-            csv += rowDays + "\n" + rowVals + "\n";
+            rows.push(dateRow); rows.push(valRow);
         }
 
-        let wage = parseInt(wages[mode]) || 0;
-        csv += "\n";
-        if (mode === 'presence') {
-            csv += `Napi bér;${wage} Ft\n`;
-            csv += `Napok;${totalCount}\n`;
-            csv += `Fizetés;${Math.round(totalCount * wage)} Ft\n`;
-        } else {
-            csv += `Órabér;${wage} Ft\n`;
-            csv += `Napok;${totalCount}\n`;
-            csv += `Órák;${totalHours.toFixed(2)}\n`;
-            csv += `Fizetés;${Math.round(totalHours * wage)} Ft\n`;
-        }
+        rows.push([]);
+        rows.push(["Összesen", document.getElementById('total-count').innerText, "Fizetés", document.getElementById('total-money').innerText]);
 
-        await fetch(`${DB_URL}exports/${currentUser.name}/${year}_${month}.json`, { 
-            method: 'PUT', 
-            body: JSON.stringify({ ts: Date.now(), data: csv }) 
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Munkaidő");
+
+        // Oszlopszélesség: 9 karakter (~68px) és középre igazítás metaadat
+        ws['!cols'] = Array(8).fill({ wch: 9 });
+        
+        // Cella igazítás beállítása minden cellára
+        Object.keys(ws).forEach(s => {
+            if(s[0] === '!') return;
+            ws[s].s = { alignment: { horizontal: "center", vertical: "center" } };
         });
 
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `${year}_${monthName}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Firebase log mentés 12 órás törléshez (csak metaadat)
+        await fetch(`${DB_URL}exports/${currentUser.name}/${year}_${month}.json`, { 
+            method: 'PUT', body: JSON.stringify({ ts: Date.now(), mode: mode }) 
+        });
+
+        XLSX.writeFile(wb, `${year}_${monthName}_munkaido.xlsx`);
     }
 
     async function deleteEntry() { delete workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${selectedDay}`]; await syncData(); closeModal('time-modal'); render(); }
