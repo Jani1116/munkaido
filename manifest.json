@@ -1,0 +1,22 @@
+{
+  "short_name": "MunkaidőPRO",
+  "name": "Munkaidő PRO - Admin",
+  "icons": [
+    {
+      "src": "1000004062.png",
+      "type": "image/png",
+      "sizes": "500x500",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "1000004062.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#000000"
+}
