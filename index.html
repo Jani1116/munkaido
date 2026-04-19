@@ -135,8 +135,24 @@
     }
 
     function openPage(m) {
-        mode = m; document.getElementById('page-main').classList.add('hidden'); document.getElementById('page-view').classList.remove('hidden');
-        document.getElementById('view-title').innerText = mode === 'presence' ? "Jelenlét" : "15p Kerekítés";
+        mode = m; 
+        document.getElementById('page-main').classList.add('hidden'); 
+        document.getElementById('page-view').classList.remove('hidden');
+        
+        const wageLabel = document.getElementById('label-wage');
+        const totalLabel = document.getElementById('label-total');
+        const title = document.getElementById('view-title');
+
+        if (mode === 'presence') {
+            title.innerText = "Jelenlét";
+            wageLabel.innerText = "NAPIBÉR";
+            totalLabel.innerText = "NAPOK";
+        } else {
+            title.innerText = "15p Kerekítés";
+            wageLabel.innerText = "ÓRABÉR";
+            totalLabel.innerText = "ÓRÁK";
+        }
+
         document.getElementById('wage-input').value = (wages[mode] || "0") === "0" ? "" : parseInt(wages[mode]).toLocaleString('hu-HU') + " Ft";
         render();
     }
@@ -190,7 +206,10 @@
     function calculateTotal() {
         let total = 0, prefix = `${mode}_${d.getFullYear()}_${d.getMonth()}_`;
         for(let k in workData) if(k.startsWith(prefix) && workData[k]) total += (mode==='presence' ? 1 : parseFloat(workData[k].total));
-        document.getElementById('total-count').innerText = mode==='presence' ? total : total.toFixed(2);
+        
+        const unit = (mode === 'presence') ? " nap" : " óra";
+        document.getElementById('total-count').innerText = (mode==='presence' ? total : total.toFixed(2)) + unit;
+        
         let w = parseInt(document.getElementById('wage-input').value.replace(/\D/g, "")) || 0;
         document.getElementById('total-money').innerText = Math.round(total * w).toLocaleString('hu-HU') + " Ft";
     }
