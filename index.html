@@ -3,26 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Munkaidő PRO</title>
+    <title>Munkaidő & Bevétel PRO</title>
     <link rel="manifest" href="manifest.json">
     <style>
         :root {
             --bg: #000000; --card: #1c1c1e; --text: #ffffff;
             --accent: #007aff; --border: #2c2c2e; --secondary: #8e8e93;
-            --danger: #ff453a; --success: #30d158;
+            --danger: #ff453a; --success: #30d158; --extra: #bf5af2;
         }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); -webkit-tap-highlight-color: transparent; }
         .container { max-width: 500px; margin: auto; background: #121212; padding: 20px; border-radius: 28px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.8); text-align: center; min-height: 90vh; }
         input { width: 100%; background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 12px; color: #fff; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
-        .main-btn { display: flex; align-items: center; justify-content: center; background: var(--card); color: white; padding: 18px; margin: 12px auto; border: 1px solid var(--border); border-radius: 16px; font-size: 16px; width: 100%; cursor: pointer; transition: 0.2s; font-weight: bold; }
-        .accent-btn { background: var(--accent); border: none; }
+        .main-btn { display: flex; align-items: center; justify-content: center; background: var(--card); color: white; padding: 18px; margin: 12px auto; border: 1px solid var(--border); border-radius: 16px; font-size: 16px; width: 100%; cursor: pointer; transition: 0.2s; font-weight: bold; border: none; }
+        .accent-btn { background: var(--accent); }
+        .extra-btn { background: var(--extra); }
         .nav-row { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; background: var(--card); padding: 10px 15px; border-radius: 14px; border: 1px solid var(--border); }
         .nav-btn { background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; }
         .calendar-grid { display: grid; grid-template-columns: 40px repeat(7, 1fr); gap: 6px; margin: 15px 0; }
         .grid-header { font-size: 11px; font-weight: bold; color: var(--accent); text-align: center; }
         .week-num { font-size: 10px; color: var(--secondary); align-self: center; text-align: center; }
-        .day-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--card); min-height: 65px; border-radius: 12px; font-size: 14px; border: 1px solid var(--border); }
+        .day-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--card); min-height: 65px; border-radius: 12px; font-size: 14px; border: 1px solid var(--border); cursor: pointer; }
         .day-val { font-size: 9px; font-weight: bold; color: var(--success); margin-top: 4px; }
+        .day-val.extra { color: var(--extra); }
         .summary-section { background: var(--card); padding: 15px; border-radius: 20px; border: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; }
         .sum-full { grid-column: span 2; border-top: 1px solid var(--border); padding-top: 10px; }
         .salary-input { background: #000; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 10px; width: 100%; font-size: 16px; box-sizing: border-box; }
@@ -36,7 +38,7 @@
 
 <div id="loading-overlay">Szinkronizálás...</div>
 
-<div id="login-screen" class="container" style="justify-content: center;">
+<div id="login-screen" class="container">
     <h2 style="margin-bottom:20px">Munkaidő Belépés</h2>
     <input type="text" id="login-user" placeholder="Felhasználónév" value="Jani">
     <input type="password" id="login-pass" placeholder="Jelszó">
@@ -45,9 +47,10 @@
 
 <div id="page-main" class="container hidden">
     <div id="user-info" style="font-size:12px; color:var(--secondary); margin-bottom:10px"></div>
-    <h1 style="margin-bottom:25px">Munkaidő</h1>
+    <h1 style="margin-bottom:25px">Főmenü</h1>
     <button class="main-btn" onclick="openPage('round15')">⏱️ 15p Kerekítés</button>
     <button class="main-btn" onclick="openPage('presence')">📅 Jelenlét (✓)</button>
+    <button class="main-btn extra-btn" onclick="openPage('extra')">💰 Extra bevétel</button>
     <button class="main-btn" style="background:none; color:var(--danger); border:none; margin-top:20px" onclick="logout()">Kijelentkezés</button>
 </div>
 
@@ -61,7 +64,7 @@
     <div class="calendar-grid" id="calendar-body"></div>
     
     <div class="summary-section">
-        <div class="sum-box">
+        <div class="sum-box" id="wage-box">
             <span id="label-wage" style="font-size:10px; color:var(--secondary)">ÓRABÉR</span>
             <input type="text" id="wage-input" class="salary-input" placeholder="0 Ft" oninput="formatCurrency(this); saveWages();">
         </div>
@@ -70,13 +73,14 @@
             <div id="total-count" style="font-size: 20px; font-weight: bold; margin-top:5px">0</div>
         </div>
         <div class="sum-box sum-full">
-            <span style="font-size:10px; color:var(--secondary)">VÁRHATÓ FIZETÉS</span>
+            <span id="label-result" style="font-size:10px; color:var(--secondary)">VÁRHATÓ FIZETÉS</span>
             <div id="total-money" style="font-size: 24px; font-weight: bold; color: var(--success);">0 Ft</div>
         </div>
     </div>
     <button class="main-btn" style="margin-top:20px" onclick="backToMenu()">Vissza a menübe</button>
 </div>
 
+<!-- Idő rögzítő modal -->
 <div id="time-modal" class="modal">
     <div class="modal-content">
         <h3 id="modal-date"></h3>
@@ -92,11 +96,23 @@
     </div>
 </div>
 
+<!-- Extra bevétel modal -->
+<div id="extra-modal" class="modal">
+    <div class="modal-content">
+        <h3 id="extra-modal-date"></h3>
+        <input type="text" id="extra-amount" inputmode="numeric" placeholder="Összeg (Ft)" oninput="formatCurrency(this)">
+        <input type="text" id="extra-note" placeholder="Megjegyzés (pl. Fusi, Tippmix)">
+        <button class="main-btn extra-btn" onclick="saveExtra()">MENTÉS</button>
+        <button class="main-btn" style="background:none; border:none; color:var(--danger)" onclick="deleteEntry()">Törlés</button>
+        <button class="main-btn" style="background:none; border:none" onclick="closeModal('extra-modal')">Mégse</button>
+    </div>
+</div>
+
 <script>
     if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js'); }
     const DB_URL = "https://kiadaskoveto-2e474-default-rtdb.firebaseio.com/";
     let currentUser = JSON.parse(localStorage.getItem('work_session'));
-    let workData = {}, wages = { 'presence': '0', 'round15': '0' }, d = new Date(), mode = 'presence', selectedDay = null;
+    let workData = {}, wages = {}, d = new Date(), mode = 'presence', selectedDay = null;
     const months = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
 
     async function handleLogin() {
@@ -126,7 +142,7 @@
         showLoading(true);
         const res = await fetch(`${DB_URL}work_data/${currentUser.name}.json`);
         const data = await res.json();
-        if(data) { workData = data.entries || {}; wages = data.wages || wages; }
+        if(data) { workData = data.entries || {}; wages = data.wages || {}; }
         showLoading(false); render();
     }
 
@@ -139,22 +155,33 @@
         document.getElementById('page-main').classList.add('hidden'); 
         document.getElementById('page-view').classList.remove('hidden');
         
+        const wageBox = document.getElementById('wage-box');
         const wageLabel = document.getElementById('label-wage');
         const totalLabel = document.getElementById('label-total');
+        const resultLabel = document.getElementById('label-result');
         const title = document.getElementById('view-title');
 
         if (mode === 'presence') {
             title.innerText = "Jelenlét";
             wageLabel.innerText = "NAPIBÉR";
             totalLabel.innerText = "NAPOK";
+            resultLabel.innerText = "VÁRHATÓ FIZETÉS";
+            wageBox.classList.remove('hidden');
+        } else if (mode === 'extra') {
+            title.innerText = "Extra bevétel";
+            totalLabel.innerText = "ESEMÉNYEK";
+            resultLabel.innerText = "ÖSSZES EXTRA BEVÉTEL";
+            wageBox.classList.add('hidden');
         } else {
             title.innerText = "15p Kerekítés";
             wageLabel.innerText = "ÓRABÉR";
             totalLabel.innerText = "ÓRÁK";
+            resultLabel.innerText = "VÁRHATÓ FIZETÉS";
+            wageBox.classList.remove('hidden');
         }
 
         let wageKey = `wage_${d.getFullYear()}_${d.getMonth()}_${mode}`;
-        let currentWageValue = wages[wageKey] || wages[mode] || "0";
+        let currentWageValue = wages[wageKey] || "0";
         document.getElementById('wage-input').value = currentWageValue === "0" ? "" : parseInt(currentWageValue).toLocaleString('hu-HU') + " Ft";
         render();
     }
@@ -168,6 +195,7 @@
             if (endM < startM) { endM += 1440; isNight = true; }
             let m = endM - startM;
             if (document.getElementById('break-toggle').checked) m -= 30;
+            if (m < 0) m = 0;
             let finalHrs = (m / 60);
             if (mode === 'round15') { finalHrs = (Math.round(m / 15) * 15) / 60; }
             workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${selectedDay}`] = { start: s, end: e, total: finalHrs.toFixed(2), isNight: isNight };
@@ -175,9 +203,22 @@
         await syncData(); closeModal('time-modal'); render();
     }
 
+    async function saveExtra() {
+        let amt = document.getElementById('extra-amount').value.replace(/\D/g, "");
+        let note = document.getElementById('extra-note').value.trim();
+        if (amt) {
+            workData[`extra_${d.getFullYear()}_${d.getMonth()}_${selectedDay}`] = { amount: parseInt(amt), note: note };
+            await syncData();
+        }
+        closeModal('extra-modal'); render();
+    }
+
     async function deleteEntry() {
         delete workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${selectedDay}`];
-        await syncData(); closeModal('time-modal'); render();
+        await syncData(); 
+        closeModal('time-modal'); 
+        closeModal('extra-modal'); 
+        render();
     }
 
     function render() {
@@ -196,8 +237,14 @@
                 else {
                     let key = `${mode}_${d.getFullYear()}_${d.getMonth()}_${dateCounter}`;
                     let entry = workData[key];
-                    let val = entry ? (mode==='presence' ? "✓" : (entry.isNight ? "🌙 " : "") + entry.total + "ó") : "";
-                    body.innerHTML += `<div class="day-cell" onclick="dayClick(${dateCounter})">${dateCounter}<div class="day-val">${val}</div></div>`;
+                    let val = "";
+                    let cls = "day-val";
+                    if(entry) {
+                        if(mode==='presence') val = "✓";
+                        else if(mode==='extra') { val = parseInt(entry.amount).toLocaleString('hu-HU') + " Ft"; cls += " extra"; }
+                        else val = (entry.isNight ? "🌙 " : "") + entry.total + "ó";
+                    }
+                    body.innerHTML += `<div class="day-cell" onclick="dayClick(${dateCounter})">${dateCounter}<div class="${cls}">${val}</div></div>`;
                     dateCounter++;
                 }
             }
@@ -206,15 +253,30 @@
     }
 
     function calculateTotal() {
-        let total = 0, prefix = `${mode}_${d.getFullYear()}_${d.getMonth()}_`;
-        for(let k in workData) if(k.startsWith(prefix) && workData[k]) total += (mode==='presence' ? 1 : parseFloat(workData[k].total));
+        let total = 0, money = 0, count = 0, prefix = `${mode}_${d.getFullYear()}_${d.getMonth()}_`;
+        for(let k in workData) {
+            if(k.startsWith(prefix) && workData[k]) {
+                count++;
+                if(mode === 'extra') {
+                    money += parseInt(workData[k].amount || 0);
+                } else {
+                    total += (mode==='presence' ? 1 : parseFloat(workData[k].total));
+                }
+            }
+        }
         
-        const unit = (mode === 'presence') ? " nap" : " óra";
-        document.getElementById('total-count').innerText = (mode==='presence' ? total : total.toFixed(2)) + unit;
-        
-        let wageKey = `wage_${d.getFullYear()}_${d.getMonth()}_${mode}`;
-        let w = parseInt(wages[wageKey]) || parseInt(wages[mode]) || 0;
-        document.getElementById('total-money').innerText = Math.round(total * w).toLocaleString('hu-HU') + " Ft";
+        if (mode === 'extra') {
+            document.getElementById('total-count').innerText = count + " tétel";
+            document.getElementById('total-money').innerText = money.toLocaleString('hu-HU') + " Ft";
+            document.getElementById('total-money').style.color = "var(--extra)";
+        } else {
+            const unit = (mode === 'presence') ? " nap" : " óra";
+            document.getElementById('total-count').innerText = (mode==='presence' ? total : total.toFixed(2)) + unit;
+            let wageKey = `wage_${d.getFullYear()}_${d.getMonth()}_${mode}`;
+            let w = parseInt(wages[wageKey]) || 0;
+            document.getElementById('total-money').innerText = Math.round(total * w).toLocaleString('hu-HU') + " Ft";
+            document.getElementById('total-money').style.color = "var(--success)";
+        }
     }
 
     function dayClick(day) { 
@@ -222,6 +284,12 @@
         if(mode==='presence') { 
             let key=`${mode}_${d.getFullYear()}_${d.getMonth()}_${day}`; 
             workData[key]=workData[key]?null:1; syncData().then(render); 
+        } else if(mode==='extra') {
+            let entry = workData[`extra_${d.getFullYear()}_${d.getMonth()}_${day}`] || {};
+            document.getElementById('extra-modal-date').innerText = `${months[d.getMonth()]} ${day}. (Extra)`;
+            document.getElementById('extra-amount').value = entry.amount ? entry.amount.toLocaleString('hu-HU') + " Ft" : "";
+            document.getElementById('extra-note').value = entry.note || "";
+            document.getElementById('extra-modal').style.display='flex';
         } else { 
             let entry = workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${day}`] || {};
             document.getElementById('modal-date').innerText = `${months[d.getMonth()]} ${day}.`;
@@ -233,26 +301,18 @@
 
     function timeMask(i) {
         let v = i.value.replace(/\D/g, ""); 
-        if (v.length > 4) v = v.substring(0, 4);
-        if (v.length >= 3) {
-            i.value = v.substring(0, 2) + ":" + v.substring(2, 4);
-        } else {
-            i.value = v; 
-        }
-    }
-
-    function changeMonth(n) { 
-        d.setMonth(d.getMonth() + n); 
-        
-        // Hónap váltáskor betöltjük a megfelelő havi bért
-        let wageKey = `wage_${d.getFullYear()}_${d.getMonth()}_${mode}`;
-        let currentWageValue = wages[wageKey] || wages[mode] || "0";
-        document.getElementById('wage-input').value = currentWageValue === "0" ? "" : parseInt(currentWageValue).toLocaleString('hu-HU') + " Ft";
-        
-        render(); 
+        if (v.length >= 3) { i.value = v.substring(0, 2) + ":" + v.substring(2, 4); } else { i.value = v; }
     }
 
     function formatCurrency(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('hu-HU') + " Ft" : ""; }
+
+    function changeMonth(n) { 
+        d.setMonth(d.getMonth() + n); 
+        let wageKey = `wage_${d.getFullYear()}_${d.getMonth()}_${mode}`;
+        let currentWageValue = wages[wageKey] || "0";
+        document.getElementById('wage-input').value = currentWageValue === "0" ? "" : parseInt(currentWageValue).toLocaleString('hu-HU') + " Ft";
+        render(); 
+    }
 
     async function saveWages() { 
         let wageKey = `wage_${d.getFullYear()}_${d.getMonth()}_${mode}`;
