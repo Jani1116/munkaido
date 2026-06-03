@@ -12,26 +12,26 @@
             --danger: #ff453a; --success: #30d158; --extra: #bf5af2;
         }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: var(--text); -webkit-tap-highlight-color: transparent; }
-        .container { max-width: 500px; margin: auto; background: #121212; padding: 20px; border-radius: 28px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.8); text-align: center; min-height: 90vh; }
+        .container { max-width: 500px; margin: auto; background: #121212; padding: 20px; border-radius: 28px; border: 1px solid var(--border); box-shadow: 0 20px 40px rgba(0,0,0,0.8); text-align: center; min-height: 90vh; box-sizing: border-box; }
         input { width: 100%; background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 12px; color: #fff; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
-        .main-btn { display: flex; align-items: center; justify-content: center; background: var(--card); color: white; padding: 18px; margin: 12px auto; border: 1px solid var(--border); border-radius: 16px; font-size: 16px; width: 100%; cursor: pointer; transition: 0.2s; font-weight: bold; border: none; }
-        .accent-btn { background: var(--accent); }
-        .extra-btn { background: var(--extra); }
+        .main-btn { display: flex; align-items: center; justify-content: center; background: var(--card); color: white; padding: 18px; margin: 12px auto; border: 1px solid var(--border); border-radius: 16px; font-size: 16px; width: 100%; cursor: pointer; transition: 0.2s; font-weight: bold; }
+        .accent-btn { background: var(--accent); border: none; }
+        .extra-btn { background: var(--extra); border: none; }
         .nav-row { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; background: var(--card); padding: 10px 15px; border-radius: 14px; border: 1px solid var(--border); }
         .nav-btn { background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; }
         .calendar-grid { display: grid; grid-template-columns: 40px repeat(7, 1fr); gap: 6px; margin: 15px 0; }
         .grid-header { font-size: 11px; font-weight: bold; color: var(--accent); text-align: center; }
         .week-num { font-size: 10px; color: var(--secondary); align-self: center; text-align: center; }
         .day-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--card); min-height: 65px; border-radius: 12px; font-size: 14px; border: 1px solid var(--border); cursor: pointer; }
-        .day-val { font-size: 9px; font-weight: bold; color: var(--success); margin-top: 4px; }
+        .day-val { font-size: 9px; font-weight: bold; color: var(--success); margin-top: 4px; text-align: center; word-break: break-all; }
         .day-val.extra { color: var(--extra); }
         .summary-section { background: var(--card); padding: 15px; border-radius: 20px; border: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; }
         .sum-full { grid-column: span 2; border-top: 1px solid var(--border); padding-top: 10px; }
         .salary-input { background: #000; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 10px; width: 100%; font-size: 16px; box-sizing: border-box; }
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { background: var(--card); padding: 25px; border-radius: 24px; width: 85%; max-width: 320px; border: 1px solid var(--border); }
-        #loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; display: none; align-items: center; justify-content: center; color: white; }
-        .hidden { display: none; }
+        #loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; display: none; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -91,7 +91,7 @@
             <input type="checkbox" id="break-toggle" style="width:25px; height:25px">
         </div>
         <button class="main-btn accent-btn" onclick="saveTime()">MENTÉS</button>
-        <button class="main-btn" style="background:none; border:none; color:var(--danger)" onclick="deleteEntry()">Törlés</button>
+        <button class="main-btn" style="background:none; border:none; color:var(--danger)" onclick="deleteEntry('time-modal')">Törlés</button>
         <button class="main-btn" style="background:none; border:none" onclick="closeModal('time-modal')">Mégse</button>
     </div>
 </div>
@@ -103,7 +103,7 @@
         <input type="text" id="extra-amount" inputmode="numeric" placeholder="Összeg (Ft)" oninput="formatCurrency(this)">
         <input type="text" id="extra-note" placeholder="Megjegyzés (pl. Fusi, Tippmix)">
         <button class="main-btn extra-btn" onclick="saveExtra()">MENTÉS</button>
-        <button class="main-btn" style="background:none; border:none; color:var(--danger)" onclick="deleteEntry()">Törlés</button>
+        <button class="main-btn" style="background:none; border:none; color:var(--danger)" onclick="deleteEntry('extra-modal')">Törlés</button>
         <button class="main-btn" style="background:none; border:none" onclick="closeModal('extra-modal')">Mégse</button>
     </div>
 </div>
@@ -118,6 +118,7 @@
     async function handleLogin() {
         const u = document.getElementById('login-user').value.trim();
         const p = document.getElementById('login-pass').value.trim();
+        if(!u || !p) { alert("Töltsd ki a mezőket!"); return; }
         showLoading(true);
         try {
             const res = await fetch(`${DB_URL}users_auth/${u}.json`);
@@ -127,7 +128,7 @@
                 localStorage.setItem('work_session', JSON.stringify(currentUser));
                 initApp();
             } else { alert("Hibás adatok!"); }
-        } catch(e) { alert("Hiba!"); }
+        } catch(e) { alert("Hálózati hiba a belépés során!"); }
         showLoading(false);
     }
 
@@ -140,14 +141,18 @@
 
     async function loadRemoteData() {
         showLoading(true);
-        const res = await fetch(`${DB_URL}work_data/${currentUser.name}.json`);
-        const data = await res.json();
-        if(data) { workData = data.entries || {}; wages = data.wages || {}; }
+        try {
+            const res = await fetch(`${DB_URL}work_data/${currentUser.name}.json`);
+            const data = await res.json();
+            if(data) { workData = data.entries || {}; wages = data.wages || {}; }
+        } catch(e) { console.log("Offline mód vagy hiba betöltéskor."); }
         showLoading(false); render();
     }
 
     async function syncData() {
-        await fetch(`${DB_URL}work_data/${currentUser.name}.json`, { method: 'PUT', body: JSON.stringify({ entries: workData, wages: wages }) });
+        try {
+            await fetch(`${DB_URL}work_data/${currentUser.name}.json`, { method: 'PUT', body: JSON.stringify({ entries: workData, wages: wages }) });
+        } catch(e) { console.log("Sikertelen szinkronizálás (offline)."); }
     }
 
     function openPage(m) {
@@ -194,13 +199,21 @@
             let isNight = false;
             if (endM < startM) { endM += 1440; isNight = true; }
             let m = endM - startM;
-            if (document.getElementById('break-toggle').checked) m -= 30;
+            let hasBreak = document.getElementById('break-toggle').checked;
+            if (hasBreak) m -= 30;
             if (m < 0) m = 0;
             let finalHrs = (m / 60);
             if (mode === 'round15') { finalHrs = (Math.round(m / 15) * 15) / 60; }
-            workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${selectedDay}`] = { start: s, end: e, total: finalHrs.toFixed(2), isNight: isNight };
+            workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${selectedDay}`] = { 
+                start: s, 
+                end: e, 
+                total: finalHrs.toFixed(2), 
+                isNight: isNight,
+                hasBreak: hasBreak
+            };
+            await syncData();
         }
-        await syncData(); closeModal('time-modal'); render();
+        closeModal('time-modal'); render();
     }
 
     async function saveExtra() {
@@ -213,11 +226,10 @@
         closeModal('extra-modal'); render();
     }
 
-    async function deleteEntry() {
+    async function deleteEntry(modalId) {
         delete workData[`${mode}_${d.getFullYear()}_${d.getMonth()}_${selectedDay}`];
         await syncData(); 
-        closeModal('time-modal'); 
-        closeModal('extra-modal'); 
+        closeModal(modalId); 
         render();
     }
 
@@ -233,8 +245,9 @@
             if (dateCounter > lastDay) break;
             body.innerHTML += `<div class="week-num">${getWeekNum(new Date(d.getFullYear(), d.getMonth(), dateCounter))}</div>`;
             for (let col = 0; col < 7; col++) {
-                if ((row === 0 && col < startShift) || dateCounter > lastDay) body.innerHTML += `<div></div>`;
-                else {
+                if ((row === 0 && col < startShift) || dateCounter > lastDay) {
+                    body.innerHTML += `<div></div>`;
+                } else {
                     let key = `${mode}_${d.getFullYear()}_${d.getMonth()}_${dateCounter}`;
                     let entry = workData[key];
                     let val = "";
@@ -295,6 +308,7 @@
             document.getElementById('modal-date').innerText = `${months[d.getMonth()]} ${day}.`;
             document.getElementById('start-time').value = entry.start || "";
             document.getElementById('end-time').value = entry.end || "";
+            document.getElementById('break-toggle').checked = entry.hasBreak || false;
             document.getElementById('time-modal').style.display='flex'; 
         } 
     }
