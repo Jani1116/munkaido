@@ -263,8 +263,9 @@
                             let wageKey = `wage_${d.getFullYear()}_${d.getMonth()}_${mode}`;
                             let currentWage = parseInt(wages[wageKey]) || 0;
                             let dailyMoney = Math.round(parseFloat(entry.total) * currentWage);
-                            let moneyDisplay = dailyMoney > 0 ? `<br><span style="font-size:9px; color:var(--secondary); font-weight:normal;">${(dailyMoney / 1000).toFixed(dailyMoney % 1000 === 0 ? 0 : 1)}k Ft</span>` : "";
-                            val = (entry.isNight ? "🌙 " : "") + entry.total + "ó" + moneyDisplay; 
+let moneyDisplay = dailyMoney > 0 ? `<br><span style="font-size:9px; color:var(--secondary); font-weight:normal;">${dailyMoney.toLocaleString('hu-HU')}</span>` : "";
+val = (entry.isNight ? "🌙 " : "") + entry.total + "ó" + moneyDisplay;
+
                         }
                     }
                     html += `<div class="day-cell" onclick="dayClick(${dateCounter})">${dateCounter}<div class="${cls}">${val}</div></div>`;
