@@ -236,17 +236,20 @@
     function render() {
         document.getElementById('month-display').innerText = `${d.getFullYear()}. ${months[d.getMonth()]}`;
         const body = document.getElementById('calendar-body');
-        body.innerHTML = '<div class="grid-header"></div>' + ["H", "K", "Sze", "Cs", "P", "Szo", "V"].map(h => `<div class="grid-header">${h}</div>`).join('');
+        
+        let html = '<div class="grid-header"></div>' + ["H", "K", "Sze", "Cs", "P", "Szo", "V"].map(h => `<div class="grid-header">${h}</div>`).join('');
+        
         let firstDay = new Date(d.getFullYear(), d.getMonth(), 1);
         let lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
         let startShift = (firstDay.getDay() + 6) % 7;
         let dateCounter = 1;
+
         for (let row = 0; row < 6; row++) {
             if (dateCounter > lastDay) break;
-            body.innerHTML += `<div class="week-num">${getWeekNum(new Date(d.getFullYear(), d.getMonth(), dateCounter))}</div>`;
+            html += `<div class="week-num">${getWeekNum(new Date(d.getFullYear(), d.getMonth(), dateCounter))}</div>`;
             for (let col = 0; col < 7; col++) {
                 if ((row === 0 && col < startShift) || dateCounter > lastDay) {
-                    body.innerHTML += `<div></div>`;
+                    html += `<div></div>`;
                 } else {
                     let key = `${mode}_${d.getFullYear()}_${d.getMonth()}_${dateCounter}`;
                     let entry = workData[key];
@@ -257,11 +260,12 @@
                         else if(mode==='extra') { val = parseInt(entry.amount).toLocaleString('hu-HU') + " Ft"; cls += " extra"; }
                         else val = (entry.isNight ? "🌙 " : "") + entry.total + "ó";
                     }
-                    body.innerHTML += `<div class="day-cell" onclick="dayClick(${dateCounter})">${dateCounter}<div class="${cls}">${val}</div></div>`;
+                    html += `<div class="day-cell" onclick="dayClick(${dateCounter})">${dateCounter}<div class="${cls}">${val}</div></div>`;
                     dateCounter++;
                 }
             }
         }
+        body.innerHTML = html;
         calculateTotal();
     }
 
@@ -280,7 +284,7 @@
         
         if (mode === 'extra') {
             document.getElementById('total-count').innerText = count + " tétel";
-            document.getElementById('total-money').innerText = money.toLocaleString('hu-HU') + " Ft";
+            document.getElementById('total-money').innerText = money.toLocaleString('hu-HU'] + " Ft";
             document.getElementById('total-money').style.color = "var(--extra)";
         } else {
             const unit = (mode === 'presence') ? " nap" : " óra";
