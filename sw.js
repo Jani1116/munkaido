@@ -1,4 +1,4 @@
-const CACHE_NAME = 'work-pro-v3';
+const CACHE_NAME = 'work-pro-v1';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -25,7 +25,8 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.url.includes('firebaseio.com')) {
-    return fetch(e.request);
+    // A Firebase kéréseket mindig egyenesen a hálózatról kéri, nem cache-eli
+    return fetch(e.request).catch(() => new Response(JSON.stringify({error: "offline"})));
   }
   e.respondWith(
     caches.match(e.request).then((res) => res || fetch(e.request))
