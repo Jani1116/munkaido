@@ -172,7 +172,6 @@
         render();
     }
 
-    // ÚJ: Éves összesítő megnyitása
     function openAnnualPage() {
         document.getElementById('page-main').classList.add('hidden');
         document.getElementById('page-annual').classList.remove('hidden');
@@ -182,7 +181,6 @@
         renderAnnual();
     }
 
-    // ÚJ: Éves összesítő renderelése
     function renderAnnual() {
         let year = document.getElementById('year-select').value;
         let html = '<table class="annual-table"><tr><th>Hó</th><th>15p</th><th>Jel.</th><th>Extra</th><th>Össz</th></tr>';
@@ -196,10 +194,10 @@
             }
             let wage = parseInt(wages[`wage_${year}_${m}_round15`]) || 0;
             let monthFt = Math.round(mData.h15 * wage) + mData.extra;
-            html += `<tr><td>${months[m].substring(0,3)}</td><td>${mData.h15.toFixed(1)}</td><td>${mData.jel}</td><td>${mData.extra.toLocaleString()}</td><td style="font-weight:bold">${monthFt.toLocaleString()}</td></tr>`;
+            html += `<tr><td>${months[m].substring(0,3)}</td><td>${mData.h15.toFixed(1)}</td><td>${mData.jel}</td><td>${mData.extra.toLocaleString()}</td><td style="font-weight:bold">${monthFt.toLocaleString()} Ft</td></tr>`;
             totals.h15 += mData.h15; totals.jel += mData.jel; totals.extra += mData.extra; totals.ft += monthFt;
         }
-        html += `<tr style="border-top:2px solid white; font-weight:bold;"><td>ÖSSZ</td><td>${totals.h15.toFixed(1)}</td><td>${totals.jel}</td><td>${totals.extra.toLocaleString()}</td><td>${totals.ft.toLocaleString()}</td></tr></table>`;
+        html += `<tr style="border-top:2px solid white; font-weight:bold;"><td>ÖSSZ</td><td>${totals.h15.toFixed(1)}</td><td>${totals.jel}</td><td>${totals.extra.toLocaleString()}</td><td>${totals.ft.toLocaleString()} Ft</td></tr></table>`;
         document.getElementById('annual-data').innerHTML = html;
     }
 
@@ -244,6 +242,8 @@
         closeModal(modalId); 
         render();
     }
+
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     function render() {
         document.getElementById('month-display').innerText = `${d.getFullYear()}. ${months[d.getMonth()]}`;
@@ -336,3 +336,4 @@
 </script>
 </body>
 </html>
+
