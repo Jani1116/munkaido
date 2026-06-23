@@ -184,21 +184,24 @@
     function renderAnnual() {
         let year = document.getElementById('year-select').value;
         let html = '<table class="annual-table"><tr><th>Hó</th><th>15p</th><th>Jel.</th><th>Extra</th><th>Össz</th></tr>';
-        let totals = { h15: 0, jel: 0, extra: 0, ft: 0 };
+        let totals = { h15: 0, jelFt: 0, extra: 0, ft: 0 };
         for(let m = 0; m < 12; m++) {
-            let mData = { h15: 0, jel: 0, extra: 0, ft: 0 };
+            let mData = { h15: 0, jelFt: 0, extra: 0, ft: 0 };
             for(let k in workData) {
                 if(k.startsWith(`round15_${year}_${m}_`)) mData.h15 += parseFloat(workData[k].total || 0);
-                if(k.startsWith(`presence_${year}_${m}_`)) mData.jel += 1;
+                if(k.startsWith(`presence_${year}_${m}_`)) {
+                    let wage = parseInt(wages[`wage_${year}_${m}_presence`]) || 0;
+                    mData.jelFt += wage;
+                }
                 if(k.startsWith(`extra_${year}_${m}_`)) mData.extra += parseInt(workData[k].amount || 0);
             }
             let wage = parseInt(wages[`wage_${year}_${m}_round15`]) || 0;
-            mData.ft = Math.round(mData.h15 * wage) + mData.extra;
+            mData.ft = Math.round(mData.h15 * wage) + mData.jelFt + mData.extra;
             
-            html += `<tr><td>${months[m].substring(0,3)}</td><td>${mData.h15.toFixed(1)}</td><td>${mData.jel}</td><td>${mData.extra.toLocaleString()} Ft</td><td style="font-weight:bold">${mData.ft.toLocaleString()} Ft</td></tr>`;
-            totals.h15 += mData.h15; totals.jel += mData.jel; totals.extra += mData.extra; totals.ft += mData.ft;
+            html += `<tr><td>${months[m].substring(0,3)}</td><td>${mData.h15.toFixed(1)}</td><td>${mData.jelFt.toLocaleString()} Ft</td><td>${mData.extra.toLocaleString()} Ft</td><td style="font-weight:bold">${mData.ft.toLocaleString()} Ft</td></tr>`;
+            totals.h15 += mData.h15; totals.jelFt += mData.jelFt; totals.extra += mData.extra; totals.ft += mData.ft;
         }
-        html += `<tr style="border-top:2px solid white; font-weight:bold;"><td>ÖSSZ</td><td>${totals.h15.toFixed(1)}</td><td>${totals.jel}</td><td>${totals.extra.toLocaleString()} Ft</td><td>${totals.ft.toLocaleString()} Ft</td></tr></table>`;
+        html += `<tr style="border-top:2px solid white; font-weight:bold;"><td>ÖSSZ</td><td>${totals.h15.toFixed(1)}</td><td>${totals.jelFt.toLocaleString()} Ft</td><td>${totals.extra.toLocaleString()} Ft</td><td>${totals.ft.toLocaleString()} Ft</td></tr></table>`;
         document.getElementById('annual-data').innerHTML = html;
     }
 
@@ -270,7 +273,7 @@
                         else if(mode==='extra') { val = parseInt(entry.amount).toLocaleString('hu-HU') + " Ft"; cls += " extra"; }
                         else { 
                             let dailyMoney = Math.round(parseFloat(entry.total) * currentWage);
-                            let moneyDisplay = dailyMoney > 0 ? `<br><span style="font-size:9px; color:var(--secondary); font-weight:normal;">${dailyMoney.toLocaleString('hu-HU')}</span>` : "";
+                            let moneyDisplay = dailyMoney > 0 ? `<br><span style="font-size:9px; color:var(--secondary); font-weight:normal;">${dailyMoney.toLocaleString('hu-HU')} Ft</span>` : "";
                             val = (entry.isNight ? "🌙 " : "") + entry.total + "ó" + moneyDisplay;
                         }
                     }
@@ -298,10 +301,11 @@
             document.getElementById('total-money').style.color = "var(--extra)";
         } else {
             const unit = (mode === 'presence') ? " nap" : " óra";
-            document.getElementById('total-count').innerText = (mode==='presence' ? total : total.toFixed(2)) + unit;
+            document.getElementById('total-count').innerText = (mode==='presence' ? count : total.toFixed(2)) + unit;
             let wageKey = `wage_${d.getFullYear()}_${d.getMonth()}_${mode}`;
             let w = parseInt(wages[wageKey]) || 0;
-            document.getElementById('total-money').innerText = Math.round(total * w).toLocaleString('hu-HU') + " Ft";
+            let finalMoney = (mode === 'presence') ? (count * w) : (total * w);
+            document.getElementById('total-money').innerText = Math.round(finalMoney).toLocaleString('hu-HU') + " Ft";
             document.getElementById('total-money').style.color = "var(--success)";
         }
     }
@@ -337,4 +341,3 @@
 </script>
 </body>
 </html>
-
