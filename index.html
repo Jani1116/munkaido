@@ -353,11 +353,9 @@
 
         let rows = [];
         
-        let row1 = [`${year}. ${months[monthIdx]}`];
-        for(let i=1; i<9; i++) row1.push("");
-        rows.push(row1);
-
-        rows.push(["Nap", "Érkezés", "Távozás", "Ebédidő", "Munkaidő", "Napi bér", "", "Havi munkaóra", ""]);
+        // Tiszta, logikus fejléc
+        rows.push([`${year}. ${months[monthIdx]} - Munkaidő összesítő`, "", "", "", "", ""]);
+        rows.push(["Nap", "Érkezés", "Távozás", "Ebédidő", "Munkaidő (óra)", "Napi bér (Ft)"]);
 
         let totalHrs = 0;
         let totalMoneyVal = 0;
@@ -377,44 +375,28 @@
             let entry = workData[key];
             let start = entry ? entry.start : "";
             let end = entry ? entry.end : "";
-            let breakTime = (entry && entry.hasBreak) ? "-30p" : "";
-            let hrs = entry ? parseFloat(entry.total) : 0;
-            let dailyWage = hrs > 0 ? Math.round(hrs * currentWage) : 0;
+            let breakTime = (entry && entry.hasBreak) ? "30p" : "";
+            let hrs = entry ? parseFloat(entry.total) : "";
+            let dailyWage = entry ? Math.round(parseFloat(entry.total) * currentWage) : "";
 
-            let r = [
-                day,
-                start,
-                end,
-                breakTime,
-                hrs > 0 ? hrs + " óra" : "",
-                dailyWage > 0 ? dailyWage + " Ft" : "",
-                "",
-                "",
-                ""
-            ];
-            
-            if (day === 3) { r[7] = "Havi munkaóra"; r[8] = totalHrs + " óra"; }
-            if (day === 5) { r[7] = "Havi munkabér"; r[8] = totalMoneyVal + " Ft"; }
-            if (day === 7) { r[7] = "Egyéb"; }
-            if (day >= 9 && day <= 12) { r[7] = `Egyéb ${day - 8}`; r[8] = ""; }
-            if (day === 13) { r[7] = "Fizetés"; }
-            if (day === 14) { r[7] = "Végösszeg"; r[8] = totalMoneyVal + " Ft"; }
-
-            rows.push(r);
+            rows.push([day, start, end, breakTime, hrs, dailyWage]);
         }
 
-        // Javított kódolás kezelés a fura karakterek elkerülése érdekében (Blob használatával)
-        let csvContent = rows.map(e => e.map(val => `"${val}"`).join(";")).join("\r\n");
-        let blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
-        let url = URL.createObjectURL(blob);
+        // Kulturált havi összesítők külön sorokban alul
+        rows.push(["", "", "", "", "", ""]);
+        rows.push(["Összes havi munkaóra:", totalHrs.toFixed(2), "óra", "", "", ""]);
+        rows.push(["Összes havi munkabér:", totalMoneyVal.toLocaleString('hu-HU'), "Ft", "", "", ""]);
+
+        // Helyes kódolás (Data URI + BOM) a fura karakterek elkerülésére mobilon is
+        let csvContent = "\uFEFF" + rows.map(e => e.map(val => `"${val}"`).join(";")).join("\r\n");
+        let encodedUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
         
         let link = document.createElement("a");
-        link.setAttribute("href", url);
+        link.setAttribute("href", encodedUri);
         link.setAttribute("download", `Munkaido_${year}_${months[monthIdx]}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
     }
 
     function exportAnnualCSV() {
