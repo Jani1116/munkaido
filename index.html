@@ -357,7 +357,7 @@
         for(let i=1; i<9; i++) row1.push("");
         rows.push(row1);
 
-        rows.push(["", "Érkezés", "Távozás", "Ebédidő", "Munkaidő", "Napi bér", "", "Havi munkaóra", ""]);
+        rows.push(["Nap", "Érkezés", "Távozás", "Ebédidő", "Munkaidő", "Napi bér", "", "Havi munkaóra", ""]);
 
         let totalHrs = 0;
         let totalMoneyVal = 0;
@@ -403,9 +403,10 @@
             rows.push(r);
         }
 
-        let csvContent = "\uFEFF" + rows.map(e => e.map(val => `"${val}"`).join(";")).join("\r\n");
-        let base64Content = btoa(unescape(encodeURIComponent(csvContent)));
-        let url = `data:text/csv;charset=utf-8;base64,${base64Content}`;
+        // Javított kódolás kezelés a fura karakterek elkerülése érdekében (Blob használatával)
+        let csvContent = rows.map(e => e.map(val => `"${val}"`).join(";")).join("\r\n");
+        let blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        let url = URL.createObjectURL(blob);
         
         let link = document.createElement("a");
         link.setAttribute("href", url);
@@ -413,6 +414,7 @@
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 
     function exportAnnualCSV() {
