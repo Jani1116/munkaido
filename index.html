@@ -353,13 +353,13 @@
 
         let rows = [];
         
-        // A1: Cím (A-tól G-ig üres cellák)
+        // A1: Cím
         rows.push([`${year} ${months[monthIdx]} Munkaido Osszesito`, "", "", "", "", "", "", ""]);
         
         // Fejléc
         rows.push(["Nap", "Erkezes", "Tavozas", "Ebedido", "Munkaido (ora)", "Napi fizetes", "", ""]);
 
-        // Adatsorok feltöltése napokra (E oszlopba tiszta szám, F oszlopba tiszta szám a képletek miatt)
+        // Adatsorok napokra
         for (let day = 1; day <= lastDay; day++) {
             let key = `round15_${year}_${monthIdx}_${day}`;
             let entry = workData[key];
@@ -377,18 +377,18 @@
             rows.push(["", "", "", "", "", "", "", ""]);
         }
 
-        // H oszlop címkék és Google Sheets / Excel képletek (H indexe a 7-es)
-        rows[1][7] = "munkaido";
-        rows[2][7] = "=SZUM(E3:E33)"; // Összesíti az órákat számként
+        // H oszlop címkék és SUM képletek
+        rows[1][7] = "Munkaido";
+        rows[2][7] = "=SUM(E3:E33)"; // Órák összesítése
 
         rows[4][7] = "Munkaber";
-        rows[5][7] = "=SZUM(F3:F33)"; // Összesíti a napi fizetéseket számként
+        rows[5][7] = "=SUM(F3:F33)"; // Napi fizetések összesítése
 
         rows[7][7] = "Egyeb";
         rows[8][7] = "Berlet";
 
-        rows[13][7] = "Havi fezetes";
-        rows[14][7] = "=H6+H10+H12"; // H6 (Munkabér) + H10 (Egyéb) + H12 (Bérlet)
+        rows[13][7] = "havi fizetes";
+        rows[14][7] = "=H6+H10+H12"; // Havi összesen
 
         let csvContent = rows.map(e => e.join(";")).join("\n");
         
