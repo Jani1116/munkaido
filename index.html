@@ -341,7 +341,7 @@
 
     function exportCSV() {
         if (mode !== 'round15') {
-            alert("A CSV exportalas jelenleg a 15p kerekites nezettre van optimalizalva!");
+            alert("A CSV exportálás jelenleg a 15p kerekítés nézettre van optimalizálva!");
             return;
         }
 
@@ -353,23 +353,16 @@
 
         let rows = [];
         
-        // Ekezetmentesitett fejlec a mobilos Sheets hibatlan felismeresehez
-        rows.push([`${year} ${months[monthIdx]} Munkaido Osszesito`, "", "", "", "", ""]);
-        rows.push(["Nap", "Erkezes", "Tavozas", "Ebedido", "Munkaido (ora)", "Napi ber (Ft)"]);
+        // A1: Cím (egyesítéshez a többi oszlop üresen marad az első sorban)
+        rows.push([`${year} ${months[monthIdx]} Munkaido Osszesito`, "", "", "", "", "", "", ""]);
+        
+        // Fejléc (F oszlop: Napi fizetes, H oszlopoknak fenntartva a hely)
+        rows.push(["Nap", "Erkezes", "Tavozas", "Ebedido", "Munkaido (ora)", "Napi fizetes", "", ""]);
 
         let totalHrs = 0;
         let totalMoneyVal = 0;
 
-        for (let day = 1; day <= lastDay; day++) {
-            let key = `round15_${year}_${monthIdx}_${day}`;
-            let entry = workData[key];
-            if(entry) {
-                let hrs = parseFloat(entry.total) || 0;
-                totalHrs += hrs;
-                totalMoneyVal += Math.round(hrs * currentWage);
-            }
-        }
-
+        // Adatsorok feltöltése napokra
         for (let day = 1; day <= lastDay; day++) {
             let key = `round15_${year}_${monthIdx}_${day}`;
             let entry = workData[key];
@@ -377,15 +370,34 @@
             let end = entry ? entry.end : "";
             let breakTime = (entry && entry.hasBreak) ? "30p" : "";
             let hrs = entry ? entry.total : "";
-            let dailyWage = entry ? Math.round(parseFloat(entry.total) * currentWage) : "";
+            let dailyWageNum = entry ? Math.round(parseFloat(entry.total) * currentWage) : 0;
+            let dailyWage = dailyWageNum > 0 ? `${dailyWageNum.toLocaleString('hu-HU')} Ft` : "";
 
-            rows.push([day, start, end, breakTime, hrs, dailyWage]);
+            if(entry) {
+                totalHrs += parseFloat(entry.total) || 0;
+                totalMoneyVal += dailyWageNum;
+            }
+
+            rows.push([day, start, end, breakTime, hrs ? `${hrs} ora` : "", dailyWage, "", ""]);
         }
 
-        // Alulra rendezett, ekezetmentes osszesitok
-        rows.push(["", "", "", "", "", ""]);
-        rows.push(["Osszes havi ora:", totalHrs.toFixed(2), "", "", "", ""]);
-        rows.push(["Osszes havi ber (Ft):", totalMoneyVal, "", "", "", ""]);
+        // Üres sorok kitöltése, hogy pontosan a kért sorindexekre essenek az értékek (pl. H2, H5, H8, H14)
+        while(rows.length < 15) {
+            rows.push(["", "", "", "", "", "", "", ""]);
+        }
+
+        // H oszlop összesítők (H = 7. index)
+        rows[1][7] = "munkaido";
+        rows[2][7] = `${totalHrs.toFixed(2)} ora`;
+
+        rows[4][7] = "Munkaber";
+        rows[5][7] = `${totalMoneyVal.toLocaleString('hu-HU')} Ft`;
+
+        rows[7][7] = "Egyeb";
+        rows[8][7] = "Berlet";
+
+        rows[13][7] = "Havi fezetes";
+        rows[14][7] = `${totalMoneyVal.toLocaleString('hu-HU')} Ft`;
 
         let csvContent = rows.map(e => e.join(";")).join("\n");
         let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -393,7 +405,7 @@
         
         let link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", `Munkaido_${year}.csv`);
+        link.setAttribute("download", `Munkaido_${year}_${months[monthIdx]}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -401,7 +413,7 @@
     }
 
     function exportAnnualCSV() {
-        alert("Az eves osszesito CSV export hamarosan erkezik!");
+        alert("Az éves összesítő CSV export hamarosan érkezik!");
     }
 
     function timeMask(i) { let v = i.value.replace(/\D/g, ""); if (v.length >= 3) { i.value = v.substring(0, 2) + ":" + v.substring(2, 4); } else { i.value = v; } }
