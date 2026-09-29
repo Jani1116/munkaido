@@ -17,6 +17,8 @@
         .main-btn { display: flex; align-items: center; justify-content: center; background: var(--card); color: white; padding: 18px; margin: 12px auto; border: 1px solid var(--border); border-radius: 16px; font-size: 16px; width: 100%; cursor: pointer; transition: 0.2s; font-weight: bold; }
         .accent-btn { background: var(--accent); border: none; }
         .extra-btn { background: var(--extra); border: none; }
+        .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-row .main-btn { margin: 0; width: 50%; }
         .nav-row { display: flex; justify-content: space-between; align-items: center; margin: 5px 0; background: var(--card); padding: 10px 15px; border-radius: 14px; border: 1px solid var(--border); }
         .nav-btn { background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; }
         .calendar-grid { display: grid; grid-template-columns: 40px repeat(7, 1fr); gap: 6px; margin: 15px 0; }
@@ -80,14 +82,20 @@
             <div id="total-money" style="font-size: 24px; font-weight: bold; color: var(--success);">0 Ft</div>
         </div>
     </div>
-    <button class="main-btn" style="margin-top:20px" onclick="backToMenu()">Vissza a menübe</button>
+    <div class="btn-row">
+        <button class="main-btn" onclick="backToMenu()">Vissza</button>
+        <button class="main-btn accent-btn" onclick="exportCSV()">CSV</button>
+    </div>
 </div>
 
 <div id="page-annual" class="container hidden">
     <h2>Éves Összesítő</h2>
     <select id="year-select" onchange="renderAnnual()"></select>
     <div id="annual-data" style="margin-top:15px;"></div>
-    <button class="main-btn" style="margin-top:20px" onclick="backToMenu()">Vissza a menübe</button>
+    <div class="btn-row">
+        <button class="main-btn" onclick="backToMenu()">Vissza</button>
+        <button class="main-btn accent-btn" onclick="exportAnnualCSV()">CSV</button>
+    </div>
 </div>
 
 <div id="time-modal" class="modal">
@@ -329,6 +337,88 @@
             document.getElementById('break-toggle').checked = entry.hasBreak || false;
             document.getElementById('time-modal').style.display='flex'; 
         } 
+    }
+
+    function exportCSV() {
+        if (mode !== 'round15') {
+            alert("A CSV exportálás jelenleg a 15p kerekítés nézetre van optimalizálva!");
+            return;
+        }
+
+        let year = d.getFullYear();
+        let monthIdx = d.getMonth();
+        let lastDay = new Date(year, monthIdx + 1, 0).getDate();
+        let wageKey = `wage_${year}_${monthIdx}_round15`;
+        let currentWage = parseInt(wages[wageKey]) || 0;
+
+        let rows = [];
+        // 1. Sor: A1-H1 (Aktuális hónap)
+        let row1 = [`${year}. ${months[monthIdx]}`];
+        for(let i=1; i<8; i++) row1.push("");
+        rows.push(row1);
+
+        // 2. Sor: Fejlécek
+        rows.push(["", "Érkezés", "Távozás", "Ebédidő", "Munkaidő", "Napi bér", "", "Havi munkaóra"]);
+
+        let totalHrs = 0;
+        let totalMoneyVal = 0;
+
+        // Napok feldolgozása (3. sortól lefelé)
+        for (let day = 1; day <= lastDay; day++) {
+            let key = `round15_${year}_${monthIdx}_${day}`;
+            let entry = workData[key];
+            let start = entry ? entry.start : "";
+            let end = entry ? entry.end : "";
+            let breakTime = (entry && entry.hasBreak) ? "-30p" : "";
+            let hrs = entry ? parseFloat(entry.total) : 0;
+            let dailyWage = hrs > 0 ? Math.round(hrs * currentWage) : 0;
+
+            if(entry) {
+                totalHrs += hrs;
+                totalMoneyVal += dailyWage;
+            }
+
+            let r = [
+                day,
+                start,
+                end,
+                breakTime,
+                hrs > 0 ? hrs.toFixed(2) + "ó" : "",
+                dailyWage > 0 ? dailyWage.toLocaleString('hu-HU') + " Ft" : "",
+                "",
+                ""
+            ];
+            
+            // H oszlop adatok a megfelelő sorokhoz
+            if (day === 3) r[7] = totalHrs.toFixed(2) + "ó";
+            if (day === 6) { r[6] = "Havi munkabér"; r[7] = totalMoneyVal.toLocaleString('hu-HU') + " Ft"; }
+            if (day === 8) r[6] = "Egyéb";
+            if (day >= 9 && day <= 12) {
+                // Itt helyet hagyunk az egyedi tételeknek, ha letöltés előtt kitöltenék, de most üresen hagyjuk vagy beírhatod
+            }
+            if (day === 13) r[6] = "Fizetés";
+            if (day === 14) {
+                // Itt összesítve kiírjuk a végösszeget is példaként
+                r[7] = totalMoneyVal.toLocaleString('hu-HU') + " Ft";
+            }
+
+            rows.push(r);
+        }
+
+        // CSV szöveg generálás UTF-8 BOM-mal a helyes magyar ékezetekért Excelben
+        let csvContent = "\uFEFF" + rows.map(e => e.map(val => `"${val}"`).join(";")).join("\r\n");
+        let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        let url = URL.createObjectURL(blob);
+        let link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Munkaido_${year}_${months[monthIdx]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function exportAnnualCSV() {
+        alert("Az éves összesítő CSV export hamarosan érkezik!");
     }
 
     function timeMask(i) { let v = i.value.replace(/\D/g, ""); if (v.length >= 3) { i.value = v.substring(0, 2) + ":" + v.substring(2, 4); } else { i.value = v; } }
