@@ -341,7 +341,7 @@
 
     function exportCSV() {
         if (mode !== 'round15') {
-            alert("A CSV exportálás jelenleg a 15p kerekítés nézetre van optimalizálva!");
+            alert("A CSV exportalas jelenleg a 15p kerekites nezettre van optimalizalva!");
             return;
         }
 
@@ -353,9 +353,9 @@
 
         let rows = [];
         
-        // Tiszta, logikus fejléc
-        rows.push([`${year}. ${months[monthIdx]} - Munkaidő összesítő`, "", "", "", "", ""]);
-        rows.push(["Nap", "Érkezés", "Távozás", "Ebédidő", "Munkaidő (óra)", "Napi bér (Ft)"]);
+        // Ekezetmentesitett fejlec a mobilos Sheets hibatlan felismeresehez
+        rows.push([`${year} ${months[monthIdx]} Munkaido Osszesito`, "", "", "", "", ""]);
+        rows.push(["Nap", "Erkezes", "Tavozas", "Ebedido", "Munkaido (ora)", "Napi ber (Ft)"]);
 
         let totalHrs = 0;
         let totalMoneyVal = 0;
@@ -376,31 +376,32 @@
             let start = entry ? entry.start : "";
             let end = entry ? entry.end : "";
             let breakTime = (entry && entry.hasBreak) ? "30p" : "";
-            let hrs = entry ? parseFloat(entry.total) : "";
+            let hrs = entry ? entry.total : "";
             let dailyWage = entry ? Math.round(parseFloat(entry.total) * currentWage) : "";
 
             rows.push([day, start, end, breakTime, hrs, dailyWage]);
         }
 
-        // Kulturált havi összesítők külön sorokban alul
+        // Alulra rendezett, ekezetmentes osszesitok
         rows.push(["", "", "", "", "", ""]);
-        rows.push(["Összes havi munkaóra:", totalHrs.toFixed(2), "óra", "", "", ""]);
-        rows.push(["Összes havi munkabér:", totalMoneyVal.toLocaleString('hu-HU'), "Ft", "", "", ""]);
+        rows.push(["Osszes havi ora:", totalHrs.toFixed(2), "", "", "", ""]);
+        rows.push(["Osszes havi ber (Ft):", totalMoneyVal, "", "", "", ""]);
 
-        // Helyes kódolás (Data URI + BOM) a fura karakterek elkerülésére mobilon is
-        let csvContent = "\uFEFF" + rows.map(e => e.map(val => `"${val}"`).join(";")).join("\r\n");
-        let encodedUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+        let csvContent = rows.map(e => e.join(";")).join("\n");
+        let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        let url = URL.createObjectURL(blob);
         
         let link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Munkaido_${year}_${months[monthIdx]}.csv`);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Munkaido_${year}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 
     function exportAnnualCSV() {
-        alert("Az éves összesítő CSV export hamarosan érkezik!");
+        alert("Az eves osszesito CSV export hamarosan erkezik!");
     }
 
     function timeMask(i) { let v = i.value.replace(/\D/g, ""); if (v.length >= 3) { i.value = v.substring(0, 2) + ":" + v.substring(2, 4); } else { i.value = v; } }
