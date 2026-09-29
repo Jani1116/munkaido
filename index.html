@@ -84,7 +84,7 @@
     </div>
     <div class="btn-row">
         <button class="main-btn" onclick="backToMenu()">Vissza</button>
-        <button class="main-btn accent-btn" onclick="exportCSV()">CSV</button>
+        <button class="main-btn accent-btn" onclick="copyTableToClipboard()">📋 Másolás</button>
     </div>
 </div>
 
@@ -339,9 +339,9 @@
         } 
     }
 
-    function exportCSV() {
+    function copyTableToClipboard() {
         if (mode !== 'round15') {
-            alert("A CSV exportálás jelenleg a 15p kerekítés nézettre van optimalizálva!");
+            alert("A táblázat másolása jelenleg a 15p kerekítés nézettre van optimalizálva!");
             return;
         }
 
@@ -379,30 +379,24 @@
 
         // H oszlop címkék és SUM képletek
         rows[1][7] = "Munkaido";
-        rows[2][7] = "=SUM(E3:E33)"; // Órák összesítése
+        rows[2][7] = "=SUM(E3:E33)";
 
         rows[4][7] = "Munkaber";
-        rows[5][7] = "=SUM(F3:F33)"; // Napi fizetések összesítése
+        rows[5][7] = "=SUM(F3:F33)";
 
         rows[7][7] = "Egyeb";
         rows[8][7] = "Berlet";
 
         rows[13][7] = "havi fizetes";
-        rows[14][7] = "=H6+H10+H12"; // Havi összesen
+        rows[14][7] = "=H6+H10+H12";
 
-        let csvContent = rows.map(e => e.join(";")).join("\n");
-        
-        // UTF-8 BOM a helyes kódoláshoz
-        let blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
-        let url = URL.createObjectURL(blob);
-        
-        let link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `Munkaido_${year}_${months[monthIdx]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        let textToCopy = rows.map(e => e.join("\t")).join("\n");
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            alert("Táblázat sikeresen másolva a vágólapra! Most kattints a Google Sheets első cellájára, és nyomj Beillesztést.");
+        }).catch(err => {
+            alert("Hiba történt a vágólapra másolás során.");
+        });
     }
 
     function exportAnnualCSV() {
