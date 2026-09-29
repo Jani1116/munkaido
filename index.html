@@ -352,18 +352,29 @@
         let currentWage = parseInt(wages[wageKey]) || 0;
 
         let rows = [];
+        
         // 1. Sor: A1-H1 (Aktuális hónap)
         let row1 = [`${year}. ${months[monthIdx]}`];
-        for(let i=1; i<8; i++) row1.push("");
+        for(let i=1; i<9; i++) row1.push("");
         rows.push(row1);
 
-        // 2. Sor: Fejlécek
-        rows.push(["", "Érkezés", "Távozás", "Ebédidő", "Munkaidő", "Napi bér", "", "Havi munkaóra"]);
+        // 2. Sor: Fejlécek (A2-től I2-ig)
+        rows.push(["", "Érkezés", "Távozás", "Ebédidő", "Munkaidő", "Napi bér", "", "Havi munkaóra", ""]);
 
         let totalHrs = 0;
         let totalMoneyVal = 0;
 
-        // Napok feldolgozása (3. sortól lefelé)
+        for (let day = 1; day <= lastDay; day++) {
+            let key = `round15_${year}_${monthIdx}_${day}`;
+            let entry = workData[key];
+            if(entry) {
+                let hrs = parseFloat(entry.total) || 0;
+                totalHrs += hrs;
+                totalMoneyVal += Math.round(hrs * currentWage);
+            }
+        }
+
+        // Napok feltöltése a 3. sortól (A3-tól)
         for (let day = 1; day <= lastDay; day++) {
             let key = `round15_${year}_${monthIdx}_${day}`;
             let entry = workData[key];
@@ -373,39 +384,45 @@
             let hrs = entry ? parseFloat(entry.total) : 0;
             let dailyWage = hrs > 0 ? Math.round(hrs * currentWage) : 0;
 
-            if(entry) {
-                totalHrs += hrs;
-                totalMoneyVal += dailyWage;
-            }
-
             let r = [
                 day,
                 start,
                 end,
                 breakTime,
-                hrs > 0 ? hrs.toFixed(2) + "ó" : "",
-                dailyWage > 0 ? dailyWage.toLocaleString('hu-HU') + " Ft" : "",
+                hrs > 0 ? hrs + " óra" : "",
+                dailyWage > 0 ? dailyWage + " Ft" : "",
+                "",
                 "",
                 ""
             ];
             
-            // H oszlop adatok a megfelelő sorokhoz
-            if (day === 3) r[7] = totalHrs.toFixed(2) + "ó";
-            if (day === 6) { r[6] = "Havi munkabér"; r[7] = totalMoneyVal.toLocaleString('hu-HU') + " Ft"; }
-            if (day === 8) r[6] = "Egyéb";
-            if (day >= 9 && day <= 12) {
-                // Itt helyet hagyunk az egyedi tételeknek, ha letöltés előtt kitöltenék, de most üresen hagyjuk vagy beírhatod
+            if (day === 3) {
+                r[7] = "Havi munkaóra";
+                r[8] = totalHrs + " óra";
             }
-            if (day === 13) r[6] = "Fizetés";
+            if (day === 5) {
+                r[7] = "Havi munkabér";
+                r[8] = totalMoneyVal + " Ft";
+            }
+            if (day === 7) {
+                r[7] = "Egyéb";
+            }
+            if (day >= 9 && day <= 12) {
+                let idx = day - 8;
+                r[7] = `Egyéb ${idx}`;
+                r[8] = ""; 
+            }
+            if (day === 13) {
+                r[7] = "Fizetés";
+            }
             if (day === 14) {
-                // Itt összesítve kiírjuk a végösszeget is példaként
-                r[7] = totalMoneyVal.toLocaleString('hu-HU') + " Ft";
+                r[7] = "Végösszeg";
+                r[8] = totalMoneyVal + " Ft";
             }
 
             rows.push(r);
         }
 
-        // CSV szöveg generálás UTF-8 BOM-mal a helyes magyar ékezetekért Excelben
         let csvContent = "\uFEFF" + rows.map(e => e.map(val => `"${val}"`).join(";")).join("\r\n");
         let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         let url = URL.createObjectURL(blob);
