@@ -84,7 +84,7 @@
     </div>
     <div class="btn-row">
         <button class="main-btn" onclick="backToMenu()">Vissza</button>
-        <button class="main-btn accent-btn" onclick="exportCSV()">XLS</button>
+        <button class="main-btn accent-btn" onclick="exportCSV()">CSV</button>
     </div>
 </div>
 
@@ -94,7 +94,7 @@
     <div id="annual-data" style="margin-top:15px;"></div>
     <div class="btn-row">
         <button class="main-btn" onclick="backToMenu()">Vissza</button>
-        <button class="main-btn accent-btn" onclick="exportAnnualCSV()">XLS</button>
+        <button class="main-btn accent-btn" onclick="exportAnnualCSV()">CSV</button>
     </div>
 </div>
 
@@ -341,7 +341,7 @@
 
     function exportCSV() {
         if (mode !== 'round15') {
-            alert("Az XLS exportálás jelenleg a 15p kerekítés nézetre van optimalizálva!");
+            alert("A CSV exportálás jelenleg a 15p kerekítés nézetre van optimalizálva!");
             return;
         }
 
@@ -350,6 +350,14 @@
         let lastDay = new Date(year, monthIdx + 1, 0).getDate();
         let wageKey = `wage_${year}_${monthIdx}_round15`;
         let currentWage = parseInt(wages[wageKey]) || 0;
+
+        let rows = [];
+        
+        let row1 = [`${year}. ${months[monthIdx]}`];
+        for(let i=1; i<9; i++) row1.push("");
+        rows.push(row1);
+
+        rows.push(["", "Érkezés", "Távozás", "Ebédidő", "Munkaidő", "Napi bér", "", "Havi munkaóra", ""]);
 
         let totalHrs = 0;
         let totalMoneyVal = 0;
@@ -364,14 +372,6 @@
             }
         }
 
-        let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-        <head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: 1px solid #ccc; padding: 5px; text-align: center; }</style></head>
-        <body>
-        <table>`;
-
-        html += `<tr><td colspan="9" style="font-weight:bold; font-size:14pt;">${year}. ${months[monthIdx]}</td></tr>`;
-        html += `<tr><td></td><td>Érkezés</td><td>Távozás</td><td>Ebédidő</td><td>Munkaidő</td><td>Napi bér</td><td></td><td>Havi munkaóra</td><td></td></tr>`;
-
         for (let day = 1; day <= lastDay; day++) {
             let key = `round15_${year}_${monthIdx}_${day}`;
             let entry = workData[key];
@@ -381,43 +381,42 @@
             let hrs = entry ? parseFloat(entry.total) : 0;
             let dailyWage = hrs > 0 ? Math.round(hrs * currentWage) : 0;
 
-            let hLabel = "";
-            let iLabel = "";
+            let r = [
+                day,
+                start,
+                end,
+                breakTime,
+                hrs > 0 ? hrs + " óra" : "",
+                dailyWage > 0 ? dailyWage + " Ft" : "",
+                "",
+                "",
+                ""
+            ];
+            
+            if (day === 3) { r[7] = "Havi munkaóra"; r[8] = totalHrs + " óra"; }
+            if (day === 5) { r[7] = "Havi munkabér"; r[8] = totalMoneyVal + " Ft"; }
+            if (day === 7) { r[7] = "Egyéb"; }
+            if (day >= 9 && day <= 12) { r[7] = `Egyéb ${day - 8}`; r[8] = ""; }
+            if (day === 13) { r[7] = "Fizetés"; }
+            if (day === 14) { r[7] = "Végösszeg"; r[8] = totalMoneyVal + " Ft"; }
 
-            if (day === 3) { hLabel = "Havi munkaóra"; iLabel = totalHrs + " óra"; }
-            if (day === 5) { hLabel = "Havi munkabér"; iLabel = totalMoneyVal + " Ft"; }
-            if (day === 7) { hLabel = "Egyéb"; }
-            if (day >= 9 && day <= 12) { hLabel = `Egyéb ${day - 8}`; }
-            if (day === 13) { hLabel = "Fizetés"; }
-            if (day === 14) { hLabel = "Végösszeg"; iLabel = totalMoneyVal + " Ft"; }
-
-            html += `<tr>
-                <td>${day}</td>
-                <td>${start}</td>
-                <td>${end}</td>
-                <td>${breakTime}</td>
-                <td>${hrs > 0 ? hrs + " óra" : ""}</td>
-                <td>${dailyWage > 0 ? dailyWage + " Ft" : ""}</td>
-                <td></td>
-                <td>${hLabel}</td>
-                <td>${iLabel}</td>
-            </tr>`;
+            rows.push(r);
         }
 
-        html += `</table></body></html>`;
-
-        let blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-        let url = URL.createObjectURL(blob);
+        let csvContent = "\uFEFF" + rows.map(e => e.map(val => `"${val}"`).join(";")).join("\r\n");
+        let base64Content = btoa(unescape(encodeURIComponent(csvContent)));
+        let url = `data:text/csv;charset=utf-8;base64,${base64Content}`;
+        
         let link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", `Munkaido_${year}_${months[monthIdx]}.xls`);
+        link.setAttribute("download", `Munkaido_${year}_${months[monthIdx]}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     }
 
     function exportAnnualCSV() {
-        alert("Az éves összesítő XLS export hamarosan érkezik!");
+        alert("Az éves összesítő CSV export hamarosan érkezik!");
     }
 
     function timeMask(i) { let v = i.value.replace(/\D/g, ""); if (v.length >= 3) { i.value = v.substring(0, 2) + ":" + v.substring(2, 4); } else { i.value = v; } }
