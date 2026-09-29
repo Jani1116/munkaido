@@ -218,7 +218,7 @@
     function updateWageInputField() {
         let wageKey = `wage_${d.getFullYear()}_${d.getMonth()}_${mode}`;
         let currentWageValue = wages[wageKey] || "0";
-        document.getElementById('wage-input').value = currentWageValue === "0" ? "" : parseInt(currentWageValue).toLocaleString('hu-HU') + " Ft";
+        document.getElementById('wage-input').value = currentWageValue === "0" ? "" : parseInt(currentWageValue).toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft";
     }
 
     async function saveTime() {
@@ -280,10 +280,10 @@
                     let val = "", cls = "day-val";
                     if(entry) {
                         if(mode==='presence') val = "✓";
-                        else if(mode==='extra') { val = parseInt(entry.amount).toLocaleString('hu-HU') + " Ft"; cls += " extra"; }
+                        else if(mode==='extra') { val = parseInt(entry.amount).toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft"; cls += " extra"; }
                         else { 
                             let dailyMoney = Math.round(parseFloat(entry.total) * currentWage);
-                            let moneyDisplay = dailyMoney > 0 ? `<br><span style="font-size:9px; color:var(--secondary); font-weight:normal;">${dailyMoney.toLocaleString('hu-HU')} Ft</span>` : "";
+                            let moneyDisplay = dailyMoney > 0 ? `<br><span style="font-size:9px; color:var(--secondary); font-weight:normal;">${dailyMoney.toLocaleString('hu-HU').replace(/\u00A0/g, ' ')} Ft</span>` : "";
                             val = (entry.isNight ? "🌙 " : "") + entry.total + "ó" + moneyDisplay;
                         }
                     }
@@ -307,7 +307,7 @@
         }
         if (mode === 'extra') {
             document.getElementById('total-count').innerText = count + " tétel";
-            document.getElementById('total-money').innerText = money.toLocaleString('hu-HU') + " Ft";
+            document.getElementById('total-money').innerText = money.toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft";
             document.getElementById('total-money').style.color = "var(--extra)";
         } else {
             const unit = (mode === 'presence') ? " nap" : " óra";
@@ -315,7 +315,7 @@
             let wageKey = `wage_${d.getFullYear()}_${d.getMonth()}_${mode}`;
             let w = parseInt(wages[wageKey]) || 0;
             let finalMoney = (mode === 'presence') ? (count * w) : (total * w);
-            document.getElementById('total-money').innerText = Math.round(finalMoney).toLocaleString('hu-HU') + " Ft";
+            document.getElementById('total-money').innerText = Math.round(finalMoney).toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft";
             document.getElementById('total-money').style.color = "var(--success)";
         }
     }
@@ -326,7 +326,7 @@
         else if(mode==='extra') {
             let entry = workData[`extra_${d.getFullYear()}_${d.getMonth()}_${day}`] || {};
             document.getElementById('extra-modal-date').innerText = `${months[d.getMonth()]} ${day}. (Extra)`;
-            document.getElementById('extra-amount').value = entry.amount ? entry.amount.toLocaleString('hu-HU') + " Ft" : "";
+            document.getElementById('extra-amount').value = entry.amount ? entry.amount.toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft" : "";
             document.getElementById('extra-note').value = entry.note || "";
             document.getElementById('extra-modal').style.display='flex';
         } else { 
@@ -353,54 +353,47 @@
 
         let rows = [];
         
-        // A1: Cím (egyesítéshez a többi oszlop üresen marad az első sorban)
+        // A1: Cím (A-tól G-ig üres cellák)
         rows.push([`${year} ${months[monthIdx]} Munkaido Osszesito`, "", "", "", "", "", "", ""]);
         
-        // Fejléc (F oszlop: Napi fizetes, H oszlopoknak fenntartva a hely)
+        // Fejléc
         rows.push(["Nap", "Erkezes", "Tavozas", "Ebedido", "Munkaido (ora)", "Napi fizetes", "", ""]);
 
-        let totalHrs = 0;
-        let totalMoneyVal = 0;
-
-        // Adatsorok feltöltése napokra
+        // Adatsorok feltöltése napokra (E oszlopba tiszta szám, F oszlopba tiszta szám a képletek miatt)
         for (let day = 1; day <= lastDay; day++) {
             let key = `round15_${year}_${monthIdx}_${day}`;
             let entry = workData[key];
             let start = entry ? entry.start : "";
             let end = entry ? entry.end : "";
             let breakTime = (entry && entry.hasBreak) ? "30p" : "";
-            let hrs = entry ? entry.total : "";
-            let dailyWageNum = entry ? Math.round(parseFloat(entry.total) * currentWage) : 0;
-            let dailyWage = dailyWageNum > 0 ? `${dailyWageNum.toLocaleString('hu-HU')} Ft` : "";
+            let hrs = (entry && entry.total) ? parseFloat(entry.total) : "";
+            let dailyWage = (entry && entry.total) ? Math.round(parseFloat(entry.total) * currentWage) : "";
 
-            if(entry) {
-                totalHrs += parseFloat(entry.total) || 0;
-                totalMoneyVal += dailyWageNum;
-            }
-
-            rows.push([day, start, end, breakTime, hrs ? `${hrs} ora` : "", dailyWage, "", ""]);
+            rows.push([day, start, end, breakTime, hrs, dailyWage, "", ""]);
         }
 
-        // Üres sorok kitöltése, hogy pontosan a kért sorindexekre essenek az értékek (pl. H2, H5, H8, H14)
+        // Üres sorok kitöltése a H oszlop képleteihez
         while(rows.length < 15) {
             rows.push(["", "", "", "", "", "", "", ""]);
         }
 
-        // H oszlop összesítők (H = 7. index)
+        // H oszlop címkék és Google Sheets / Excel képletek (H indexe a 7-es)
         rows[1][7] = "munkaido";
-        rows[2][7] = `${totalHrs.toFixed(2)} ora`;
+        rows[2][7] = "=SZUM(E3:E33)"; // Összesíti az órákat számként
 
         rows[4][7] = "Munkaber";
-        rows[5][7] = `${totalMoneyVal.toLocaleString('hu-HU')} Ft`;
+        rows[5][7] = "=SZUM(F3:F33)"; // Összesíti a napi fizetéseket számként
 
         rows[7][7] = "Egyeb";
         rows[8][7] = "Berlet";
 
         rows[13][7] = "Havi fezetes";
-        rows[14][7] = `${totalMoneyVal.toLocaleString('hu-HU')} Ft`;
+        rows[14][7] = "=H6+H10+H12"; // H6 (Munkabér) + H10 (Egyéb) + H12 (Bérlet)
 
         let csvContent = rows.map(e => e.join(";")).join("\n");
-        let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        
+        // UTF-8 BOM a helyes kódoláshoz
+        let blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
         let url = URL.createObjectURL(blob);
         
         let link = document.createElement("a");
@@ -417,7 +410,7 @@
     }
 
     function timeMask(i) { let v = i.value.replace(/\D/g, ""); if (v.length >= 3) { i.value = v.substring(0, 2) + ":" + v.substring(2, 4); } else { i.value = v; } }
-    function formatCurrency(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('hu-HU') + " Ft" : ""; }
+    function formatCurrency(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft" : ""; }
     function changeMonth(n) { d.setMonth(d.getMonth() + n); updateWageInputField(); render(); }
     async function saveWages() { let wageKey = `wage_${d.getFullYear()}_${d.getMonth()}_${mode}`; wages[wageKey] = document.getElementById('wage-input').value.replace(/\D/g, "") || "0"; await syncData(); render(); }
     function backToMenu() { document.getElementById('page-view').classList.add('hidden'); document.getElementById('page-annual').classList.add('hidden'); document.getElementById('page-main').classList.remove('hidden'); }
