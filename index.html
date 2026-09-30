@@ -47,20 +47,15 @@ input, select { width: 100%; background: var(--card); border: 1px solid var(--bo
 </head>
 <body>
 ​<div id="loading-overlay">Szinkronizálás...</div>
-​<div id="login-screen" class="container">
-<h2 style="margin-bottom:20px">Munkaidő Belépés</h2>
-<input type="text" id="login-user" placeholder="Felhasználónév" value="Jani">
-<input type="password" id="login-pass" placeholder="Jelszó">
-<button class="main-btn accent-btn" onclick="handleLogin()">BELÉPÉS</button>
-</div>
-​<div id="page-main" class="container hidden">
-<div id="user-info" style="font-size:12px; color:var(--secondary); margin-bottom:10px"></div>
+​<!-- Főmenü (közvetlenül indul bejelentkezés helyett) -->
+<div id="page-main" class="container">
+<div id="user-info" style="font-size:12px; color:var(--secondary); margin-bottom:10px">FIÓK: JANI (SYNC)</div>
 <h1 style="margin-bottom:25px">Főmenü</h1>
 <button class="main-btn" onclick="openPage('round15')">⏱️ 15p Kerekítés</button>
 <button class="main-btn" onclick="openPage('presence')">📅 Jelenlét (✓)</button>
 <button class="main-btn extra-btn" onclick="openPage('extra')">💰 Extra bevétel</button>
 <button class="main-btn" onclick="openAnnualPage()">📊 Összesítő</button>
-<button class="main-btn" style="background:none; color:var(--danger); border:none; margin-top:20px" onclick="logout()">Kijelentkezés</button>
+<button class="main-btn" style="background:none; color:var(--accent); border:1px solid var(--accent); margin-top:20px" onclick="loadRemoteData()">🔄 Adatok frissítése</button>
 </div>
 ​<div id="page-view" class="container hidden">
 <h2 id="view-title" style="margin:0 0 15px 0"></h2>
@@ -131,35 +126,17 @@ input, select { width: 100%; background: var(--card); border: 1px solid var(--bo
 ​<script>
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js'); }
 const DB_URL = "https://kiadaskoveto-2e474-default-rtdb.firebaseio.com/";
-let currentUser = JSON.parse(localStorage.getItem('work_session'));
+const USER_NAME = "Jani"; // Fix felhasználónév a két eszköz közötti szinkronizáláshoz
 let workData = {}, wages = {}, allowances = {}, d = new Date(), mode = 'presence', selectedDay = null;
 const months = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
-​async function handleLogin() {
-const u = document.getElementById('login-user').value.trim();
-const p = document.getElementById('login-pass').value.trim();
-if(!u || !p) { alert("Töltsd ki a mezőket!"); return; }
-showLoading(true);
-try {
-const res = await fetch(${DB_URL}users_auth/${u}.json);
-let storedPass = await res.json();
-if(storedPass && String(storedPass).replace(/"/g, '') === String(p)) {
-currentUser = { name: u };
-localStorage.setItem('work_session', JSON.stringify(currentUser));
-initApp();
-} else { alert("Hibás adatok!"); }
-} catch(e) { alert("Hálózati hiba a belépés során!"); }
-showLoading(false);
-}
-​async function initApp() {
-document.getElementById('login-screen').style.display = 'none';
-document.getElementById('page-main').classList.remove('hidden');
-document.getElementById('user-info').innerText = USER: ${currentUser.name.toUpperCase()};
-await loadRemoteData();
-}
+​// Automatikus adatszinkronizálás indításkor
+window.onload = function() {
+loadRemoteData();
+};
 ​async function loadRemoteData() {
 showLoading(true);
 try {
-const res = await fetch(${DB_URL}work_data/${currentUser.name}.json);
+const res = await fetch(${DB_URL}work_data/${USER_NAME}.json);
 const data = await res.json();
 if(data) {
 workData = data.entries || {};
@@ -167,11 +144,12 @@ wages = data.wages || {};
 allowances = data.allowances || {};
 }
 } catch(e) { console.log("Offline mód vagy hiba betöltéskor."); }
-showLoading(false); render();
+showLoading(false);
+render();
 }
 ​async function syncData() {
 try {
-await fetch(${DB_URL}work_data/${currentUser.name}.json, {
+await fetch(${DB_URL}work_data/${USER_NAME}.json, {
 method: 'PUT',
 body: JSON.stringify({ entries: workData, wages: wages, allowances: allowances })
 });
@@ -182,8 +160,7 @@ mode = m;
 document.getElementById('page-main').classList.add('hidden');
 document.getElementById('page-view').classList.remove('hidden');
 document.getElementById('page-annual').classList.add('hidden');
-​// Elrejtjük/mutatjuk az órabér mezőt attól függően, hogy szükséges-e
-document.getElementById('wage-box').style.display = (mode === 'extra') ? 'none' : 'block';
+​document.getElementById('wage-box').style.display = (mode === 'extra') ? 'none' : 'block';
 if(mode === 'extra') {
 document.querySelector('.summary-section').style.gridTemplateColumns = '1fr';
 } else {
@@ -218,7 +195,6 @@ mData.jelFt += wage;
 }
 if(k.startsWith(extra_${year}_${m}_)) mData.extra += parseInt(workData[k].amount || 0);
 }
-// Egyéb bevételek összege az adott hónapra
 let monthAllowances = allowances[allow_${year}_${m}_${mode}] || [];
 monthAllowances.forEach(item => {
 mData.allowFt += parseInt(item.amount) || 0;
@@ -235,8 +211,7 @@ let wageKey = wage_${d.getFullYear()}_${d.getMonth()}_${mode};
 let currentWageValue = wages[wageKey] || "0";
 document.getElementById('wage-input').value = currentWageValue === "0" ? "" : parseInt(currentWageValue).toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft";
 }
-​// Egyéb bevételek kezelése
-function getAllowancesKey() {
+​function getAllowancesKey() {
 return allow_${d.getFullYear()}_${d.getMonth()}_${mode};
 }
 ​function renderAllowances() {
@@ -352,8 +327,7 @@ if(mode === 'extra') money += parseInt(workData[k].amount || 0);
 else total += (mode==='presence' ? 1 : parseFloat(workData[k].total));
 }
 }
-​// Hozzáadjuk az egyéb bevételeket is a számított összeghez
-let allowKey = getAllowancesKey();
+​let allowKey = getAllowancesKey();
 let currentAllowances = allowances[allowKey] || [];
 let totalAllowances = currentAllowances.reduce((sum, item) => sum + (parseInt(item.amount) || 0), 0);
 ​if (mode === 'extra') {
@@ -401,12 +375,9 @@ let lastDay = new Date(year, monthIdx + 1, 0).getDate();
 let wageKey = wage_${year}_${monthIdx}_round15;
 let currentWage = parseInt(wages[wageKey]) || 0;
 ​let rows = [];
-​// A1: Cím
 rows.push([${year} ${months[monthIdx]} Munkaido Osszesito, "", "", "", "", "", "", ""]);
-​// Fejléc
 rows.push(["Nap", "Erkezes", "Tavozas", "Ebedido", "Munkaido (ora)", "Napi fizetes", "", ""]);
-​// Adatsorok napokra
-for (let day = 1; day <= lastDay; day++) {
+​for (let day = 1; day <= lastDay; day++) {
 let key = round15_${year}_${monthIdx}_${day};
 let entry = workData[key];
 let start = entry ? entry.start : "";
@@ -416,12 +387,10 @@ let hrs = (entry && entry.total) ? parseFloat(entry.total) : "";
 let dailyWage = (entry && entry.total) ? Math.round(parseFloat(entry.total) * currentWage) : "";
 ​rows.push([day, start, end, breakTime, hrs, dailyWage, "", ""]);
 }
-​// Üres sorok biztosítása a H oszlop képleteihez és az egyéb bevételekhez
-while(rows.length < 18) {
+​while(rows.length < 18) {
 rows.push(["", "", "", "", "", "", "", ""]);
 }
-​// H oszlop elemek felépítése Google Sheets képletekkel
-rows[1][7] = "Munkaido";
+​rows[1][7] = "Munkaido";
 rows[2][7] = "=SUM(E3:E33)";
 ​rows[4][7] = "Munkaber";
 rows[5][7] = "=SUM(F3:F33)";
@@ -436,14 +405,12 @@ rows[currentRowIndex][7] = parseInt(item.amount) || 0;
 allowanceSumCells.push(H${currentRowIndex + 1});
 currentRowIndex++;
 });
-​// Ha nincsenek egyéb bevételek, teszünk egy üres sort vagy 0-t
-let allowanceFormula = allowanceSumCells.length > 0 ? allowanceSumCells.join("+") : "0";
+​let allowanceFormula = allowanceSumCells.length > 0 ? allowanceSumCells.join("+") : "0";
 ​rows[14][7] = "havi fizetes";
-// Képlet: Munkabér (H6) + Egyéb bevételek összege
 rows[15][7] = =H6+(${allowanceFormula});
 ​let textToCopy = rows.map(e => e.join("\t")).join("\n");
 ​navigator.clipboard.writeText(textToCopy).then(() => {
-alert("Táblázat sikeresen másolva a vágólapra az egyéb bevételekkel együtt! Illeszd be a Google Sheets-be.");
+alert("Táblázat sikeresen másolva a vágólapra! Illeszd be a Google Sheets-be.");
 }).catch(err => {
 alert("Hiba történt a vágólapra másolás során.");
 });
@@ -455,11 +422,9 @@ alert("Az éves összesítő CSV export hamarosan érkezik!");
 function formatCurrency(i) { let v = i.value.replace(/\D/g, ""); i.value = v ? parseInt(v).toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft" : ""; }
 function changeMonth(n) { d.setMonth(d.getMonth() + n); updateWageInputField(); renderAllowances(); render(); }
 async function saveWages() { let wageKey = wage_${d.getFullYear()}_${d.getMonth()}_${mode}; wages[wageKey] = document.getElementById('wage-input').value.replace(/\D/g, "") || "0"; await syncData(); render(); }
-function backToMenu() { document.getElementById('page-view').classList.add('hidden'); document.getElementById('page-annual').classList.add('hidden'); document.getElementById('page-main').classList.remove('hidden'); }
-function logout() { localStorage.removeItem('work_session'); location.reload(); }
+function backToMenu() { document.getElementById('page-view').classList.add('hidden'); document.getElementById('page-annual').classList.add('hidden'); document.getElementById('page-main').classList.remove('hidden'); loadRemoteData(); }
 function showLoading(s) { document.getElementById('loading-overlay').style.display = s ? 'flex' : 'none'; }
 function getWeekNum(date) { let t = new Date(date.valueOf()); t.setDate(t.getDate() - ((date.getDay() + 6) % 7) + 3); let f = t.valueOf(); t.setMonth(0, 1); if (t.getDay() !== 4) t.setMonth(0, 1 + ((4 - t.getDay()) + 7) % 7); return 1 + Math.ceil((f - t) / 604800000); }
-if(currentUser) initApp();
 </script>
 </body>
 </html>
