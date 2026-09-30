@@ -27,22 +27,19 @@ input, select { width: 100%; background: var(--card); border: 1px solid var(--bo
 .day-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--card); min-height: 65px; border-radius: 12px; font-size: 14px; border: 1px solid var(--border); cursor: pointer; }
 .day-val { font-size: 9px; font-weight: bold; color: var(--success); margin-top: 4px; text-align: center; word-break: break-all; }
 .day-val.extra { color: var(--extra); }
-.summary-section { background: var(--card); padding: 15px; border-radius: 20px; border: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin-bottom: 15px; }
+.summary-section { background: var(--card); padding: 15px; border-radius: 20px; border: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; }
 .sum-full { grid-column: span 2; border-top: 1px solid var(--border); padding-top: 10px; }
 .salary-input { background: #000; border: 1px solid var(--border); color: white; padding: 12px; border-radius: 10px; width: 100%; font-size: 16px; box-sizing: border-box; }
-​/* Új stílusok az egyéb bevételek területhez */
-.allowances-container { background: var(--card); padding: 15px; border-radius: 20px; border: 1px solid var(--border); text-align: left; margin-bottom: 15px; }
-.allowance-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
-.allowance-item input { margin-bottom: 0; padding: 10px; font-size: 14px; }
-.allowance-del { background: none; border: none; color: var(--danger); font-size: 18px; cursor: pointer; padding: 5px 10px; }
-.small-add-btn { background: var(--extra); border: none; color: white; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; }
-​.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 1000; }
 .modal-content { background: var(--card); padding: 25px; border-radius: 24px; width: 85%; max-width: 320px; border: 1px solid var(--border); }
 #loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; display: none; align-items: center; justify-content: center; color: white; font-weight: bold; }
 .hidden { display: none !important; }
 .annual-table { width: 100%; border-collapse: collapse; margin-top: 15px; color: #fff; }
 .annual-table th, .annual-table td { padding: 8px; border-bottom: 1px solid #333; text-align: center; font-size: 13px; }
 .annual-table th { color: var(--secondary); font-size: 11px; }
+.allowance-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+.allowance-row input { margin-bottom: 0; padding: 10px; font-size: 14px; }
+.del-allowance { background: none; border: none; color: var(--danger); font-size: 18px; cursor: pointer; padding: 0 5px; }
 </style>
 </head>
 <body>
@@ -70,13 +67,7 @@ input, select { width: 100%; background: var(--card); border: 1px solid var(--bo
 <button class="nav-btn" onclick="changeMonth(1)">❯</button>
 </div>
 <div class="calendar-grid" id="calendar-body"></div>
-​<!-- Egyéb bevételek szekció (csak 15p nézetben aktív) -->
-<div id="allowances-section" class="allowances-container hidden">
-<span style="font-size:11px; color:var(--extra); font-weight:bold; display:block; margin-bottom:8px">EGYÉB BEVÉTELEK (pl. Bérlet)</span>
-<div id="allowances-list"></div>
-<button class="small-add-btn" onclick="addAllowanceRow()">+ Új tétel hozzáadása</button>
-</div>
-​<div class="summary-section">
+​<div class="summary-section" id="summary-section-box">
 <div class="sum-box" id="wage-box">
 <span id="label-wage" style="font-size:10px; color:var(--secondary)">ÓRABÉR</span>
 <input type="text" id="wage-input" class="salary-input" placeholder="0 Ft" oninput="formatCurrency(this); saveWages();">
@@ -85,12 +76,18 @@ input, select { width: 100%; background: var(--card); border: 1px solid var(--bo
 <span id="label-total" style="font-size:10px; color:var(--secondary)">ÓRÁK</span>
 <div id="total-count" style="font-size: 20px; font-weight: bold; margin-top:5px">0</div>
 </div>
-<div class="sum-box sum-full">
-<span id="label-result" style="font-size:10px; color:var(--secondary)">VÁRHATÓ FIZETÉS (ÖSSZESEN)</span>
+​<!-- Egyéb bevételek szekció (csak 15p nézetben) -->
+<div class="sum-box sum-full" id="allowance-container" style="display:none;">
+<span style="font-size:10px; color:var(--secondary); display:block; margin-bottom:8px;">EGYÉB BEVÉTELEK (pl. Bérlet)</span>
+<div id="allowance-list"></div>
+<button class="main-btn" style="background:var(--border); padding:10px; font-size:14px; margin:5px 0 0 0;" onclick="addAllowanceRow()">+ Új bevétel hozzáadása</button>
+</div>
+​<div class="sum-box sum-full">
+<span id="label-result" style="font-size:10px; color:var(--secondary)">VÁRHATÓ FIZETÉS</span>
 <div id="total-money" style="font-size: 24px; font-weight: bold; color: var(--success);">0 Ft</div>
 </div>
 </div>
-<div class="btn-row">
+​<div class="btn-row">
 <button class="main-btn" onclick="backToMenu()">Vissza</button>
 <button class="main-btn accent-btn" onclick="copyTableToClipboard()">📋 Másolás</button>
 </div>
@@ -141,8 +138,15 @@ if(!u || !p) { alert("Töltsd ki a mezőket!"); return; }
 showLoading(true);
 try {
 const res = await fetch(${DB_URL}users_auth/${u}.json);
-let storedPass = await res.json();
-if(storedPass && String(storedPass).replace(/"/g, '') === String(p)) {
+let storedVal = await res.json();
+let isValid = false;
+if(storedVal !== null) {
+let actualPass = (typeof storedVal === 'object' && storedVal !== null && storedVal.password !== undefined) ? storedVal.password : storedVal;
+if(String(actualPass).replace(/"/g, '') === String(p)) {
+isValid = true;
+}
+}
+if(isValid) {
 currentUser = { name: u };
 localStorage.setItem('work_session', JSON.stringify(currentUser));
 initApp();
@@ -182,12 +186,12 @@ mode = m;
 document.getElementById('page-main').classList.add('hidden');
 document.getElementById('page-view').classList.remove('hidden');
 document.getElementById('page-annual').classList.add('hidden');
-​let allowancesSec = document.getElementById('allowances-section');
+​let allowanceBox = document.getElementById('allowance-container');
 if(mode === 'round15') {
-allowancesSec.classList.remove('hidden');
+allowanceBox.style.display = 'block';
 renderAllowances();
 } else {
-allowancesSec.classList.add('hidden');
+allowanceBox.style.display = 'none';
 }
 ​updateWageInputField();
 render();
@@ -206,26 +210,21 @@ let html = '<table class="annual-table"><tr><th>Hó</th><th>15p</th><th>Jel.</th
 let totals = { h15Ft: 0, jelFt: 0, extra: 0, ft: 0 };
 for(let m = 0; m < 12; m++) {
 let mData = { h15Ft: 0, jelFt: 0, extra: 0, ft: 0 };
-​// 15p alapfizetés + egyéb bevételek az adott hónapra
-let monthKey = ${year}_${m};
-let h15Wage = parseInt(wages[wage_${year}_${m}_round15]) || 0;
-let totalHrs = 0;
 for(let k in workData) {
-if(k.startsWith(round15_${year}_${m}_)) totalHrs += parseFloat(workData[k].total || 0);
+if(k.startsWith(round15_${year}_${m}_)) {
+let wage = parseInt(wages[wage_${year}_${m}_round15]) || 0;
+mData.h15Ft += Math.round(parseFloat(workData[k].total || 0) * wage);
 }
-mData.h15Ft += Math.round(totalHrs * h15Wage);
-​if(allowances[monthKey]) {
-allowances[monthKey].forEach(item => {
-mData.h15Ft += parseInt(item.amount || 0);
-});
-}
-​for(let k in workData) {
 if(k.startsWith(presence_${year}_${m}_)) {
 let wage = parseInt(wages[wage_${year}_${m}_presence]) || 0;
 mData.jelFt += wage;
 }
 if(k.startsWith(extra_${year}_${m}_)) mData.extra += parseInt(workData[k].amount || 0);
 }
+let allowKey = allow_${year}_${m};
+let monthAllowances = allowances[allowKey] || [];
+let allowSum = monthAllowances.reduce((acc, curr) => acc + (parseInt(curr.amount) || 0), 0);
+​mData.h15Ft += allowSum;
 mData.ft = mData.h15Ft + mData.jelFt + mData.extra;
 ​html += <tr><td>${months[m].substring(0,3)}</td><td>${mData.h15Ft.toLocaleString()} Ft</td><td>${mData.jelFt.toLocaleString()} Ft</td><td>${mData.extra.toLocaleString()} Ft</td><td style="font-weight:bold">${mData.ft.toLocaleString()} Ft</td></tr>;
 totals.h15Ft += mData.h15Ft; totals.jelFt += mData.jelFt; totals.extra += mData.extra; totals.ft += mData.ft;
@@ -239,37 +238,38 @@ let currentWageValue = wages[wageKey] || "0";
 document.getElementById('wage-input').value = currentWageValue === "0" ? "" : parseInt(currentWageValue).toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft";
 }
 ​function renderAllowances() {
-let monthKey = ${d.getFullYear()}_${d.getMonth()};
-if(!allowances[monthKey]) allowances[monthKey] = [];
-let listEl = document.getElementById('allowances-list');
-let html = "";
-allowances[monthKey].forEach((item, index) => {
+let allowKey = allow_${d.getFullYear()}_${d.getMonth()};
+if(!allowances[allowKey]) allowances[allowKey] = [];
+let listDiv = document.getElementById('allowance-list');
+let html = '';
+allowances[allowKey].forEach((item, index) => {
 let formattedAmt = item.amount ? parseInt(item.amount).toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft" : "";
-html += <div class="allowance-item"> <input type="text" placeholder="Megnevezés (pl. Bérlet)" value="${item.name || ''}" oninput="updateAllowance(${index}, 'name', this.value)"> <input type="text" inputmode="numeric" placeholder="Összeg" value="${formattedAmt}" oninput="formatCurrency(this); updateAllowance(${index}, 'amount', this.value.replace(/\\D/g, ''))"> <button class="allowance-del" onclick="removeAllowance(${index})">✕</button> </div>;
+html += <div class="allowance-row"> <input type="text" placeholder="Megnevezés (pl. Bérlet)" value="${item.name || ''}" oninput="updateAllowance(${index}, 'name', this.value)"> <input type="text" inputmode="numeric" placeholder="Összeg" value="${formattedAmt}" oninput="formatCurrency(this); updateAllowance(${index}, 'amount', this.value.replace(/\\D/g, ''))"> <button class="del-allowance" onclick="removeAllowance(${index})">×</button> </div>;
 });
-listEl.innerHTML = html;
-calculateTotal();
+listDiv.innerHTML = html;
 }
 ​function addAllowanceRow() {
-let monthKey = ${d.getFullYear()}_${d.getMonth()};
-if(!allowances[monthKey]) allowances[monthKey] = [];
-allowances[monthKey].push({ name: "", amount: "" });
+let allowKey = allow_${d.getFullYear()}_${d.getMonth()};
+if(!allowances[allowKey]) allowances[allowKey] = [];
+allowances[allowKey].push({ name: '', amount: '' });
 renderAllowances();
+calculateTotal();
 }
-​function updateAllowance(index, field, val) {
-let monthKey = ${d.getFullYear()}_${d.getMonth()};
-if(allowances[monthKey] && allowances[monthKey][index]) {
-allowances[monthKey][index][field] = val;
+​function updateAllowance(index, field, value) {
+let allowKey = allow_${d.getFullYear()}_${d.getMonth()};
+if(allowances[allowKey] && allowances[allowKey][index]) {
+allowances[allowKey][index][field] = value;
 syncData();
 calculateTotal();
 }
 }
-​function removeAllowance(index) {
-let monthKey = ${d.getFullYear()}_${d.getMonth()};
-if(allowances[monthKey]) {
-allowances[monthKey].splice(index, 1);
-syncData();
+​async function removeAllowance(index) {
+let allowKey = allow_${d.getFullYear()}_${d.getMonth()};
+if(allowances[allowKey]) {
+allowances[allowKey].splice(index, 1);
+await syncData();
 renderAllowances();
+calculateTotal();
 }
 }
 ​async function saveTime() {
@@ -361,14 +361,11 @@ document.getElementById('total-count').innerText = (mode==='presence' ? count : 
 let wageKey = wage_${d.getFullYear()}_${d.getMonth()}_${mode};
 let w = parseInt(wages[wageKey]) || 0;
 let finalMoney = (mode === 'presence') ? (count * w) : (total * w);
-​// Ha 15p nézetben vagyunk, hozzáadjuk az egyéb bevételeket is a teljes összeghez
-if(mode === 'round15') {
-let monthKey = ${d.getFullYear()}_${d.getMonth()};
-if(allowances[monthKey]) {
-allowances[monthKey].forEach(item => {
-finalMoney += parseInt(item.amount || 0);
-});
-}
+​if (mode === 'round15') {
+let allowKey = allow_${d.getFullYear()}_${d.getMonth()};
+let monthAllowances = allowances[allowKey] || [];
+let allowSum = monthAllowances.reduce((acc, curr) => acc + (parseInt(curr.amount) || 0), 0);
+finalMoney += allowSum;
 }
 ​document.getElementById('total-money').innerText = Math.round(finalMoney).toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft";
 document.getElementById('total-money').style.color = "var(--success)";
@@ -399,17 +396,15 @@ return;
 }
 ​let year = d.getFullYear();
 let monthIdx = d.getMonth();
-let monthKey = ${year}_${monthIdx};
 let lastDay = new Date(year, monthIdx + 1, 0).getDate();
 let wageKey = wage_${year}_${monthIdx}_round15;
 let currentWage = parseInt(wages[wageKey]) || 0;
+​let allowKey = allow_${year}_${monthIdx};
+let monthAllowances = allowances[allowKey] || [];
 ​let rows = [];
-​// A1: Cím
-rows.push([${year} ${months[monthIdx]} Munkaido Osszesito, "", "", "", "", "", "", ""]);
-​// Fejléc
+​rows.push([${year} ${months[monthIdx]} Munkaido Osszesito, "", "", "", "", "", "", ""]);
 rows.push(["Nap", "Erkezes", "Tavozas", "Ebedido", "Munkaido (ora)", "Napi fizetes", "", ""]);
-​// Adatsorok napokra
-for (let day = 1; day <= lastDay; day++) {
+​for (let day = 1; day <= lastDay; day++) {
 let key = round15_${year}_${monthIdx}_${day};
 let entry = workData[key];
 let start = entry ? entry.start : "";
@@ -419,40 +414,31 @@ let hrs = (entry && entry.total) ? parseFloat(entry.total) : "";
 let dailyWage = (entry && entry.total) ? Math.round(parseFloat(entry.total) * currentWage) : "";
 ​rows.push([day, start, end, breakTime, hrs, dailyWage, "", ""]);
 }
-​// Üres sorok kitöltése a H oszlop képleteihez
-while(rows.length < 15) {
+​while(rows.length < 15) {
 rows.push(["", "", "", "", "", "", "", ""]);
 }
-​// H oszlop címkék és dinamikus bevételek betöltése
-rows[1][7] = "Munkaido";
+​rows[1][7] = "Munkaido";
 rows[2][7] = "=SUM(E3:E33)";
 ​rows[4][7] = "Munkaber";
 rows[5][7] = "=SUM(F3:F33)";
-​rows[7][7] = "Egyeb bevételek";
-​let allowanceItems = allowances[monthKey] || [];
-let currentRowIndex = 8;
-​// Ha nincsenek felvéve adatok, legalább egy üres bérlet sornak legyen hely hagyva vagy dinamikusan listázzuk
-if(allowanceItems.length === 0) {
-rows[currentRowIndex][6] = "Bérlet";
-rows[currentRowIndex][7] = 0;
-currentRowIndex++;
-} else {
-allowanceItems.forEach(item => {
-if(currentRowIndex < 13) {
-rows[currentRowIndex][6] = item.name || "Egyéb";
-rows[currentRowIndex][7] = parseInt(item.amount) || 0;
-currentRowIndex++;
-}
+​let startRowIndex = 8;
+if(monthAllowances.length > 0) {
+rows[7][7] = "Egyeb bevetel";
+monthAllowances.forEach((item, idx) => {
+let rIdx = startRowIndex + idx;
+while(rows.length <= rIdx) rows.push(["", "", "", "", "", "", "", ""]);
+rows[rIdx][7] = item.name || Bevétel ${idx+1};
+rows[rIdx][5] = parseInt(item.amount) || 0;
 });
 }
-​// Havi fizetés végösszeg képlet
-rows[13][7] = "havi fizetes";
-// Dinamikusan kiszámoljuk, hogy a H6-hoz (munkabér) melyik sorok adódnak hozzá
-let sumFormula = "=H6";
-for(let i = 8; i < currentRowIndex; i++) {
-sumFormula += +H${i+1};
+​rows[13][7] = "havi fizetes";
+​let sumParts = ["H6"];
+if(monthAllowances.length > 0) {
+monthAllowances.forEach((_, idx) => {
+sumParts.push(F${8 + idx + 1});
+});
 }
-rows[14][7] = sumFormula;
+rows[14][7] = "=" + sumParts.join("+");
 ​let textToCopy = rows.map(e => e.join("\t")).join("\n");
 ​navigator.clipboard.writeText(textToCopy).then(() => {
 alert("Táblázat sikeresen másolva a vágólapra! Most kattints a Google Sheets első cellájára, és nyomj Beillesztést.");
