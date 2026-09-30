@@ -1,4 +1,4 @@
-const CACHE_NAME = 'work-pro-v5;
+const CACHE_NAME = 'work-pro-v20;
 const ASSETS = [
   './index.html',
   './manifest.json',
