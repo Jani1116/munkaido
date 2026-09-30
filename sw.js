@@ -1,33 +1,20 @@
-const CACHE_NAME = 'work-pro-v20;
-const ASSETS = [
-  './index.html',
-  './manifest.json',
-  './1000004062.png'
-];
-
+const CACHE_NAME = 'munkaido-v25';
 self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
-  self.skipWaiting();
+    self.skipWaiting();
 });
-
 self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-      );
-    })
-  );
-  self.clients.claim();
+    e.waitUntil(
+        caches.keys().then((keyList) => {
+            return Promise.all(keyList.map((key) => {
+                return caches.delete(key);
+            }));
+        }).then(() => {
+            return self.clients.claim();
+        })
+    );
 });
-
 self.addEventListener('fetch', (e) => {
-  if (e.request.url.includes('firebaseio.com')) {
-    return fetch(e.request).catch(() => new Response(JSON.stringify({error: "offline"})));
-  }
-  e.respondWith(
-    caches.match(e.request).then((res) => res || fetch(e.request))
-  );
+    e.respondWith(
+        fetch(e.request).catch(() => caches.match(e.request))
+    );
 });
