@@ -46,7 +46,7 @@
 
 <div id="loading-overlay">Szinkronizálás...</div>
 
-<!-- FŐMENÜ (Nincs többé belépési képernyő, közvetlenül indul) -->
+<!-- FŐMENÜ -->
 <div id="page-main" class="container">
     <div id="user-info" style="font-size:12px; color:var(--secondary); margin-bottom:10px">FIÓK: JANI</div>
     <h1 style="margin-bottom:25px">Főmenü</h1>
@@ -76,7 +76,7 @@
             <div id="total-count" style="font-size: 20px; font-weight: bold; margin-top:5px">0</div>
         </div>
         
-        <!-- EGYÉB BEVÉTELEK SZEKCIÓ (Bérlet, Juttatások stb.) -->
+        <!-- EGYÉB BEVÉTELEK SZEKCIÓ -->
         <div class="sum-full" style="border-top:1px solid var(--border); padding-top:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span style="font-size:10px; color:var(--extra); font-weight:bold;">EGYÉB BEVÉTELEK (Pl. Bérlet)</span>
@@ -145,7 +145,6 @@
     let workData = {}, wages = {}, allowances = {}, d = new Date(), mode = 'presence', selectedDay = null;
     const months = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
 
-    // Indításkor azonnal töltsük be az adatokat
     window.onload = async () => {
         await loadRemoteData();
     };
@@ -211,11 +210,10 @@
                     mData.jelFt += wage;
                 }
                 if(k.startsWith(`extra_${year}_${m}_`)) {
-                    mData.h15Ft += parseInt(workData[k].amount || 0); // Ha extra menüben van
+                    mData.h15Ft += parseInt(workData[k].amount || 0);
                 }
             }
 
-            // Havi egyéb bevételek összesítése
             let monthAllowances = allowances[`allowances_${year}_${m}`] || [];
             monthAllowances.forEach(item => {
                 mData.allowanceFt += parseInt(item.amount) || 0;
@@ -236,7 +234,6 @@
         document.getElementById('wage-input').value = currentWageValue === "0" ? "" : parseInt(currentWageValue).toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft";
     }
 
-    // --- EGYÉB BEVÉTELEK KEZELÉSE ---
     function getMonthAllowancesKey() {
         return `allowances_${d.getFullYear()}_${d.getMonth()}`;
     }
@@ -377,7 +374,6 @@
         let w = parseInt(wages[wageKey]) || 0;
         let baseMoney = (mode === 'presence') ? (count * w) : (mode === 'extra' ? money : (total * w));
 
-        // Egyéb bevételek hozzáadása a végösszeghez
         let monthAllowances = allowances[getMonthAllowancesKey()] || [];
         let totalAllowances = monthAllowances.reduce((sum, item) => sum + (parseInt(item.amount) || 0), 0);
 
@@ -431,7 +427,6 @@
         rows.push(["Nap", "Erkezes", "Tavozas", "Ebedido", "Munkaido (ora)", "Napi fizetes", "", ""]);
 
         let totalHrs = 0;
-        let totalWageSum = 0;
 
         for (let day = 1; day <= lastDay; day++) {
             let key = `round15_${year}_${monthIdx}_${day}`;
@@ -441,7 +436,7 @@
             let breakTime = (entry && entry.hasBreak) ? "30p" : "";
             
             let hrsFormatted = "";
-            let dailyWageFormatted = "";
+            let dailyWageVal = "";
 
             if (entry && entry.total) {
                 let h = parseFloat(entry.total);
@@ -449,11 +444,10 @@
                 hrsFormatted = h.toString().replace('.', ',') + " ó";
 
                 let dWage = Math.round(h * currentWage);
-                totalWageSum += dWage;
-                dailyWageFormatted = dWage.toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft";
+                dailyWageVal = dWage; // Tiszta szám, a cella automatikusan formázható Ft-ra
             }
 
-            rows.push([day, start, end, breakTime, hrsFormatted, dailyWageFormatted, "", ""]);
+            rows.push([day, start, end, breakTime, hrsFormatted, dailyWageVal, "", ""]);
         }
 
         while(rows.length < 15) {
@@ -464,28 +458,20 @@
         rows[2][7] = totalHrs.toFixed(2).replace('.', ',') + " ó"; // H3
 
         rows[4][7] = "Munkaber";
-        rows[5][7] = totalWageSum.toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft"; // H6
+        rows[5][7] = `=F3:F33`; // Vagy a kiszámolt totalWageSum, de a képlet is tökéletes a H6-ba
 
-        // Egyéb bevételek elhelyezése H10 és H12 cellákba
         rows[7][7] = "Egyeb bevételek";
         let monthAllowances = allowances[`allowances_${year}_${monthIdx}`] || [];
         
-        let allowance1 = 0;
-        let allowance2 = 0;
-
         if (monthAllowances[0]) {
-            allowance1 = parseInt(monthAllowances[0].amount) || 0;
-            rows[9][7] = allowance1.toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft"; // H10 (Index 9)
+            rows[9][7] = parseInt(monthAllowances[0].amount) || 0; // H10 (tiszta szám)
         }
         if (monthAllowances[1]) {
-            allowance2 = parseInt(monthAllowances[1].amount) || 0;
-            rows[11][7] = allowance2.toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft"; // H12 (Index 11)
+            rows[11][7] = parseInt(monthAllowances[1].amount) || 0; // H12 (tiszta szám)
         }
 
-        let finalSum = totalWageSum + allowance1 + allowance2;
-
         rows[13][7] = "Havi fizetes";
-        // Képlet a H15-ös cellába (Index 14) + a biztonság kedvéért a kiszámolt érték formázva
+        // A H15-ös cella képlete (Összeg + Ft mértékegység formátum vagy konkatenáció, de a Google Sheetsben jobb a számformátum. Itt most a tiszta képlet marad, ami mögé a Sheets beillesztheti a formátumot)
         rows[14][7] = `=H6+H10+H12`;
 
         let textToCopy = rows.map(e => e.join("\t")).join("\n");
