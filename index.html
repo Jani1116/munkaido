@@ -451,20 +451,20 @@
         rows[4][7] = "Munkaber";
         rows[5][7] = "=SUM(F3:F33)";
 
-        // Egyéb bevételek dinamikus beillesztése a vágólapra másolt táblázatba is
+        // Egyéb bevételek elhelyezése H10 és H12 cellákba
         rows[7][7] = "Egyeb bevételek";
         let monthAllowances = allowances[`allowances_${year}_${monthIdx}`] || [];
-        let currentRow = 9;
-        monthAllowances.forEach(item => {
-            rows.push(["", "", "", "", "", "", "", ""]);
-            rows[currentRow - 1][7] = item.name || "Egyéb";
-            rows[currentRow - 1][8] = item.amount || 0;
-            currentRow++;
-        });
+        
+        if (monthAllowances[0]) {
+            rows[9][7] = monthAllowances[0].amount || 0; // H10 (Index 9)
+        }
+        if (monthAllowances[1]) {
+            rows[11][7] = monthAllowances[1].amount || 0; // H12 (Index 11)
+        }
 
         rows[13][7] = "Havi fizetes";
-        // Képlet az összesítésre
-        rows[14][7] = `=F6+SUM(H10:H${currentRow})`;
+        // Képlet a H15-ös cellába (Index 14)
+        rows[14][7] = `=H6+H10+H12`;
 
         let textToCopy = rows.map(e => e.join("\t")).join("\n");
 
