@@ -1,4 +1,4 @@
-const CACHE_NAME = 'munkaido-v27';
+const CACHE_NAME = 'munkaido-v28';
 self.addEventListener('install', (e) => {
     self.skipWaiting();
 });
