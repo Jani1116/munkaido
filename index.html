@@ -430,15 +430,30 @@
         rows.push([`${year} ${months[monthIdx]} Munkaido Osszesito`, "", "", "", "", "", "", ""]);
         rows.push(["Nap", "Erkezes", "Tavozas", "Ebedido", "Munkaido (ora)", "Napi fizetes", "", ""]);
 
+        let totalHrs = 0;
+        let totalWageSum = 0;
+
         for (let day = 1; day <= lastDay; day++) {
             let key = `round15_${year}_${monthIdx}_${day}`;
             let entry = workData[key];
             let start = entry ? entry.start : "";
             let end = entry ? entry.end : "";
             let breakTime = (entry && entry.hasBreak) ? "30p" : "";
-            let hrs = (entry && entry.total) ? parseFloat(entry.total) : "";
-            let dailyWage = (entry && entry.total) ? Math.round(parseFloat(entry.total) * currentWage) : "";
-            rows.push([day, start, end, breakTime, hrs, dailyWage, "", ""]);
+            
+            let hrsFormatted = "";
+            let dailyWageFormatted = "";
+
+            if (entry && entry.total) {
+                let h = parseFloat(entry.total);
+                totalHrs += h;
+                hrsFormatted = h.toString().replace('.', ',') + " ó";
+
+                let dWage = Math.round(h * currentWage);
+                totalWageSum += dWage;
+                dailyWageFormatted = dWage.toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft";
+            }
+
+            rows.push([day, start, end, breakTime, hrsFormatted, dailyWageFormatted, "", ""]);
         }
 
         while(rows.length < 15) {
@@ -446,24 +461,31 @@
         }
 
         rows[1][7] = "Munkaido";
-        rows[2][7] = "=SUM(E3:E33)";
+        rows[2][7] = totalHrs.toFixed(2).replace('.', ',') + " ó"; // H3
 
         rows[4][7] = "Munkaber";
-        rows[5][7] = "=SUM(F3:F33)";
+        rows[5][7] = totalWageSum.toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft"; // H6
 
         // Egyéb bevételek elhelyezése H10 és H12 cellákba
         rows[7][7] = "Egyeb bevételek";
         let monthAllowances = allowances[`allowances_${year}_${monthIdx}`] || [];
         
+        let allowance1 = 0;
+        let allowance2 = 0;
+
         if (monthAllowances[0]) {
-            rows[9][7] = monthAllowances[0].amount || 0; // H10 (Index 9)
+            allowance1 = parseInt(monthAllowances[0].amount) || 0;
+            rows[9][7] = allowance1.toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft"; // H10 (Index 9)
         }
         if (monthAllowances[1]) {
-            rows[11][7] = monthAllowances[1].amount || 0; // H12 (Index 11)
+            allowance2 = parseInt(monthAllowances[1].amount) || 0;
+            rows[11][7] = allowance2.toLocaleString('hu-HU').replace(/\u00A0/g, ' ') + " Ft"; // H12 (Index 11)
         }
 
+        let finalSum = totalWageSum + allowance1 + allowance2;
+
         rows[13][7] = "Havi fizetes";
-        // Képlet a H15-ös cellába (Index 14)
+        // Képlet a H15-ös cellába (Index 14) + a biztonság kedvéért a kiszámolt érték formázva
         rows[14][7] = `=H6+H10+H12`;
 
         let textToCopy = rows.map(e => e.join("\t")).join("\n");
