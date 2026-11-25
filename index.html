@@ -35,8 +35,8 @@
         #loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; display: none; align-items: center; justify-content: center; color: white; font-weight: bold; }
         .hidden { display: none !important; }
         .annual-table { width: 100%; border-collapse: collapse; margin-top: 15px; color: #fff; }
-        .annual-table th, .annual-table td { padding: 8px; border-bottom: 1px solid #333; text-align: center; font-size: 13px; }
-        .annual-table th { color: var(--secondary); font-size: 11px; }
+        .annual-table th, .annual-table td { padding: 6px 4px; border-bottom: 1px solid #333; text-align: center; font-size: 12px; }
+        .annual-table th { color: var(--secondary); font-size: 10px; }
         .allowance-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
         .allowance-row input { margin-bottom: 0; }
         .del-allowance { background: var(--danger); border: none; color: white; border-radius: 8px; width: 45px; height: 45px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -65,7 +65,7 @@
 
 <div id="loading-overlay">Szinkronizálás...</div>
 
-<!-- NYOMTATÁSI TERÜLET (CSAJSZI NYOMTATÁSKOR LÁTSZIK) -->
+<!-- NYOMTATÁSI TERÜLET -->
 <div id="print-area"></div>
 
 <!-- FŐMENÜ -->
@@ -128,7 +128,6 @@
     <div class="btn-row">
         <button class="main-btn" onclick="goBack()">⬅️ Vissza</button>
         <button class="main-btn" onclick="printAnnualView()">🖨️ Nyomtatás</button>
-        <button class="main-btn accent-btn" onclick="exportAnnualCSV()">📥 CSV</button>
     </div>
 </div>
 
@@ -174,6 +173,7 @@
         navigator.serviceWorker.register('./sw.js').then(reg => reg.update()); 
     }
     const DB_URL = "https://kiadaskoveto-2e474-default-rtdb.firebaseio.com/";
+    const LOCAL_CACHE_KEY = "work_data_cache_Jani";
     const currentUser = { name: "Jani" };
     let workData = {}, wages = {}, allowances = {}, d = new Date(), mode = 'presence', selectedDay = null;
     const months = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
@@ -212,24 +212,39 @@
         currentScreen = screen;
         activeModal = modal;
 
-        // Összes modal elrejtése
         ['time-modal', 'extra-modal', 'month-summary-modal'].forEach(id => {
             document.getElementById(id).style.display = 'none';
         });
 
-        // Oldalak váltása
         document.getElementById('page-main').classList.toggle('hidden', screen !== 'main');
         document.getElementById('page-view').classList.toggle('hidden', screen !== 'view');
         document.getElementById('page-annual').classList.toggle('hidden', screen !== 'annual');
 
-        // Aktív modal megnyitása, ha van
         if (modal) {
             document.getElementById(modal).style.display = 'flex';
         }
     }
 
-    /* --- ADATBETÖLTÉS ÉS MENTÉS --- */
+    /* --- ADATBETÖLTÉS ÉS MENTÉS (OFFLINE GYORSÍTÓTÁRRAL) --- */
+    function saveLocalCache() {
+        try {
+            localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify({ entries: workData, wages: wages, allowances: allowances }));
+        } catch(e) {}
+    }
+
+    function loadLocalCache() {
+        try {
+            const cached = JSON.parse(localStorage.getItem(LOCAL_CACHE_KEY));
+            if (cached) {
+                workData = cached.entries || {};
+                wages = cached.wages || {};
+                allowances = cached.allowances || {};
+            }
+        } catch(e) {}
+    }
+
     async function loadRemoteData() {
+        loadLocalCache();
         showLoading(true);
         try {
             const res = await fetch(`${DB_URL}work_data/${currentUser.name}.json`);
@@ -238,19 +253,21 @@
                 workData = data.entries || {}; 
                 wages = data.wages || {}; 
                 allowances = data.allowances || {};
+                saveLocalCache();
             }
-        } catch(e) { console.log("Offline mód vagy hiba betöltéskor."); }
+        } catch(e) { console.log("Offline mód: helyi gyorsítótár betöltve."); }
         showLoading(false); 
         render();
     }
 
     async function syncData() {
+        saveLocalCache();
         try {
             await fetch(`${DB_URL}work_data/${currentUser.name}.json`, { 
                 method: 'PUT', 
                 body: JSON.stringify({ entries: workData, wages: wages, allowances: allowances }) 
             });
-        } catch(e) { console.log("Sikertelen szinkronizálás (offline)."); }
+        } catch(e) { console.log("Offline mentés: szinkronizálás várakozik."); }
     }
 
     /* --- OLDALNYITÁSOK --- */
@@ -263,7 +280,6 @@
         };
         document.getElementById('view-title').innerText = titles[m] || '';
         
-        // Címkék és láthatóság igazítása nézet szerint
         const wageBox = document.getElementById('wage-box');
         const labelWage = document.getElementById('label-wage');
         const labelTotal = document.getElementById('label-total');
@@ -293,13 +309,18 @@
 
     function openAnnualPage() {
         let select = document.getElementById('year-select');
-        select.innerHTML = '<option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option>';
-        select.value = new Date().getFullYear();
+        const curYear = new Date().getFullYear();
+        let opts = '';
+        for (let y = 2025; y <= curYear + 2; y++) {
+            opts += `<option value="${y}">${y}</option>`;
+        }
+        select.innerHTML = opts;
+        select.value = curYear;
         renderAnnual();
         navigateTo('annual', null);
     }
 
-    /* --- HAVI RÉSZLETES ÖSSZESÍTÉS MODAL (NÉZETRE SZABVA) --- */
+    /* --- HAVI RÉSZLETES ÖSSZESÍTÉS MODAL --- */
     function openMonthSummaryModal() {
         const year = d.getFullYear();
         const monthIdx = d.getMonth();
@@ -400,7 +421,7 @@
         navigateTo('view', 'month-summary-modal');
     }
 
-    /* --- NYOMTATÁS (RÉSZLETES NAPI TÁBLÁZAT ÉRKEZÉSSEL, TÁVOZÁSSAL, -30P-VEL) --- */
+    /* --- NYOMTATÁS --- */
     function printCurrentView() {
         const year = d.getFullYear();
         const monthIdx = d.getMonth();
@@ -539,16 +560,17 @@
         window.print();
     }
 
-    /* --- ÉVES TÁBLÁZAT --- */
+    /* --- ÉVES TÁBLÁZAT (KÜLÖN EXTRA OSZLOPPAL ÉS PONTOS SZŰRÉSSEL) --- */
     function renderAnnual() {
         let year = document.getElementById('year-select').value;
-        let html = '<table class="annual-table"><tr><th>Hó</th><th>15p</th><th>Jel.</th><th>Egyéb</th><th>Össz</th></tr>';
-        let totals = { h15Ft: 0, jelFt: 0, allowanceFt: 0, ft: 0 };
+        let html = '<table class="annual-table"><tr><th>Hó</th><th>15p</th><th>Jel.</th><th>Extra</th><th>Egyéb</th><th>Össz</th></tr>';
+        let totals = { h15Ft: 0, jelFt: 0, extraFt: 0, allowanceFt: 0, ft: 0 };
         
         for(let m = 0; m < 12; m++) {
-            let mData = { h15Ft: 0, jelFt: 0, allowanceFt: 0, ft: 0 };
+            let mData = { h15Ft: 0, jelFt: 0, extraFt: 0, allowanceFt: 0, ft: 0 };
             
             for(let k in workData) {
+                if(!workData[k]) continue;
                 if(k.startsWith(`round15_${year}_${m}_`)) {
                     let wage = parseInt(wages[`wage_${year}_${m}_round15`]) || 0;
                     mData.h15Ft += Math.round(parseFloat(workData[k].total || 0) * wage);
@@ -558,7 +580,7 @@
                     mData.jelFt += wage;
                 }
                 if(k.startsWith(`extra_${year}_${m}_`)) {
-                    mData.h15Ft += parseInt(workData[k].amount || 0);
+                    mData.extraFt += parseInt(workData[k].amount || 0);
                 }
             }
 
@@ -567,12 +589,12 @@
                 mData.allowanceFt += parseInt(item.amount) || 0;
             });
 
-            mData.ft = mData.h15Ft + mData.jelFt + mData.allowanceFt;
+            mData.ft = mData.h15Ft + mData.jelFt + mData.extraFt + mData.allowanceFt;
             
-            html += `<tr><td>${months[m].substring(0,3)}</td><td>${mData.h15Ft.toLocaleString()} Ft</td><td>${mData.jelFt.toLocaleString()} Ft</td><td>${mData.allowanceFt.toLocaleString()} Ft</td><td style="font-weight:bold">${mData.ft.toLocaleString()} Ft</td></tr>`;
-            totals.h15Ft += mData.h15Ft; totals.jelFt += mData.jelFt; totals.allowanceFt += mData.allowanceFt; totals.ft += mData.ft;
+            html += `<tr><td>${months[m].substring(0,3)}</td><td>${mData.h15Ft.toLocaleString('hu-HU')}</td><td>${mData.jelFt.toLocaleString('hu-HU')}</td><td style="color:var(--extra)">${mData.extraFt.toLocaleString('hu-HU')}</td><td>${mData.allowanceFt.toLocaleString('hu-HU')}</td><td style="font-weight:bold">${mData.ft.toLocaleString('hu-HU')} Ft</td></tr>`;
+            totals.h15Ft += mData.h15Ft; totals.jelFt += mData.jelFt; totals.extraFt += mData.extraFt; totals.allowanceFt += mData.allowanceFt; totals.ft += mData.ft;
         }
-        html += `<tr style="border-top:2px solid white; font-weight:bold;"><td>ÖSSZ</td><td>${totals.h15Ft.toLocaleString()} Ft</td><td>${totals.jelFt.toLocaleString()} Ft</td><td>${totals.allowanceFt.toLocaleString()} Ft</td><td>${totals.ft.toLocaleString()} Ft</td></tr></table>`;
+        html += `<tr style="border-top:2px solid white; font-weight:bold;"><td>ÖSSZ</td><td>${totals.h15Ft.toLocaleString('hu-HU')}</td><td>${totals.jelFt.toLocaleString('hu-HU')}</td><td style="color:var(--extra)">${totals.extraFt.toLocaleString('hu-HU')}</td><td>${totals.allowanceFt.toLocaleString('hu-HU')}</td><td>${totals.ft.toLocaleString('hu-HU')} Ft</td></tr></table>`;
         document.getElementById('annual-data').innerHTML = html;
     }
 
@@ -739,7 +761,12 @@
 
     function dayClick(day) { 
         selectedDay = day; 
-        if(mode==='presence') { let key=`${mode}_${d.getFullYear()}_${d.getMonth()}_${day}`; workData[key]=workData[key]?null:1; syncData().then(render); }
+        if(mode==='presence') {
+            let key = `${mode}_${d.getFullYear()}_${d.getMonth()}_${day}`;
+            if (workData[key]) delete workData[key];
+            else workData[key] = 1;
+            syncData().then(render);
+        }
         else if(mode==='extra') {
             let entry = workData[`extra_${d.getFullYear()}_${d.getMonth()}_${day}`] || {};
             document.getElementById('extra-modal-date').innerText = `${months[d.getMonth()]} ${day}. (Extra)`;
@@ -754,10 +781,6 @@
             document.getElementById('break-toggle').checked = entry.hasBreak || false;
             navigateTo('view', 'time-modal');
         } 
-    }
-
-    function exportAnnualCSV() {
-        alert("Az éves összesítő CSV export hamarosan érkezik!");
     }
 
     function timeMask(i) { let v = i.value.replace(/\D/g, ""); if (v.length >= 3) { i.value = v.substring(0, 2) + ":" + v.substring(2, 4); } else { i.value = v; } }
