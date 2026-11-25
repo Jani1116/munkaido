@@ -113,8 +113,6 @@
         </div>
     </div>
     
-    <button id="copy-sheets-btn" class="main-btn accent-btn" style="margin-top:15px; margin-bottom:0;" onclick="copyTableToClipboard()">📋 Másolás Google Sheets-be</button>
-    
     <div class="btn-row">
         <button class="main-btn" onclick="goBack()">⬅️ Vissza</button>
         <button class="main-btn" onclick="printCurrentView()">🖨️ Nyomtatás</button>
@@ -270,25 +268,21 @@
         const labelWage = document.getElementById('label-wage');
         const labelTotal = document.getElementById('label-total');
         const labelResult = document.getElementById('label-result');
-        const copyBtn = document.getElementById('copy-sheets-btn');
 
         if (m === 'extra') {
             wageBox.classList.add('hidden');
             labelTotal.innerText = 'TÉTELEK';
             labelResult.innerText = 'EXTRA + EGYÉB ÖSSZESEN';
-            copyBtn.classList.add('hidden');
         } else if (m === 'presence') {
             wageBox.classList.remove('hidden');
             labelWage.innerText = 'NAPIDÍJ';
             labelTotal.innerText = 'NAPOK';
             labelResult.innerText = 'VÁRHATÓ FIZETÉS (ÖSSZESEN)';
-            copyBtn.classList.add('hidden');
         } else {
             wageBox.classList.remove('hidden');
             labelWage.innerText = 'ÓRABÉR';
             labelTotal.innerText = 'ÓRÁK';
             labelResult.innerText = 'VÁRHATÓ FIZETÉS (ÖSSZESEN)';
-            copyBtn.classList.remove('hidden');
         }
 
         updateWageInputField();
@@ -760,78 +754,6 @@
             document.getElementById('break-toggle').checked = entry.hasBreak || false;
             navigateTo('view', 'time-modal');
         } 
-    }
-
-    function copyTableToClipboard() {
-        if (mode !== 'round15') {
-            alert("A táblázat másolása jelenleg a 15p kerekítés nézettre van optimalizálva!");
-            return;
-        }
-
-        let year = d.getFullYear();
-        let monthIdx = d.getMonth();
-        let lastDay = new Date(year, monthIdx + 1, 0).getDate();
-        let wageKey = `wage_${year}_${monthIdx}_round15`;
-        let currentWage = parseInt(wages[wageKey]) || 0;
-
-        let rows = [];
-        rows.push([`${year} ${months[monthIdx]} Munkaido Osszesito`, "", "", "", "", "", "", ""]);
-        rows.push(["Nap", "Erkezes", "Tavozas", "Ebedido", "Munkaido (ora)", "Napi fizetes", "", ""]);
-
-        let totalHrs = 0;
-
-        for (let day = 1; day <= lastDay; day++) {
-            let key = `round15_${year}_${monthIdx}_${day}`;
-            let entry = workData[key];
-            let start = entry ? entry.start : "";
-            let end = entry ? entry.end : "";
-            let breakTime = (entry && entry.hasBreak) ? "30p" : "";
-            
-            let hrsFormatted = "";
-            let dailyWageVal = "";
-
-            if (entry && entry.total) {
-                let h = parseFloat(entry.total);
-                totalHrs += h;
-                hrsFormatted = h.toString().replace('.', ',') + " ó";
-
-                let dWage = Math.round(h * currentWage);
-                dailyWageVal = dWage;
-            }
-
-            rows.push([day, start, end, breakTime, hrsFormatted, dailyWageVal, "", ""]);
-        }
-
-        while(rows.length < 15) {
-            rows.push(["", "", "", "", "", "", "", ""]);
-        }
-
-        rows[1][7] = "Munkaido";
-        rows[2][7] = totalHrs.toFixed(2).replace('.', ',') + " ó";
-
-        rows[4][7] = "Munkaber";
-        rows[5][7] = `=SUM(F3:F33)`;
-
-        rows[7][7] = "Egyeb bevételek";
-        let monthAllowances = allowances[`allowances_${year}_${monthIdx}`] || [];
-        
-        if (monthAllowances[0]) {
-            rows[9][7] = parseInt(monthAllowances[0].amount) || 0;
-        }
-        if (monthAllowances[1]) {
-            rows[11][7] = parseInt(monthAllowances[1].amount) || 0;
-        }
-
-        rows[13][7] = "Havi fizetes";
-        rows[14][7] = `=H6+H10+H12`;
-
-        let textToCopy = rows.map(e => e.join("\t")).join("\n");
-
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            alert("Táblázat sikeresen másolva a vágólapra! Most kattints a Google Sheets első cellájára, és nyomj Beillesztést.");
-        }).catch(err => {
-            alert("Hiba történt a vágólapra másolás során.");
-        });
     }
 
     function exportAnnualCSV() {
